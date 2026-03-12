@@ -276,20 +276,17 @@ async function empImportExcel(input) {
 // ---- MODAL ----
 
 // ======================================================
-// EMPLOYEE → IT INVENTORY VIEWER
+// EMPLOYEE -> IT INVENTORY VIEWER
 // ======================================================
 function empInvModal() {
-  return `<div id="emp-inv-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-    <div class="modal-box" style="max-width:860px;width:95%;max-height:88vh;overflow-y:auto;">
-      <div class="modal-header">
-        <div class="modal-title" id="emp-inv-modal-title">💻 IT Inventory</div>
-        <button class="btn-close" onclick="document.getElementById('emp-inv-modal').style.display='none'">×</button>
-      </div>
-      <div id="emp-inv-modal-body" style="padding:20px;">
-        <div style="text-align:center;padding:32px;color:var(--text2);">⏳ Loading...</div>
-      </div>
-    </div>
-  </div>`;
+  return '<div id="emp-inv-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">'
+    + '<div class="modal-box" style="max-width:860px;width:95%;max-height:88vh;overflow-y:auto;">'
+    + '<div class="modal-header">'
+    + '<div class="modal-title" id="emp-inv-modal-title">💻 IT Inventory</div>'
+    + '<button class="btn-close" onclick="empCloseInvModal()">×</button>'
+    + '</div><div id="emp-inv-modal-body" style="padding:20px;">'
+    + '<div style="text-align:center;padding:32px;color:var(--text2);">⏳ Loading...</div>'
+    + '</div></div></div>';
 }
 
 async function empViewInventory(name, empId) {
@@ -298,61 +295,62 @@ async function empViewInventory(name, empId) {
   document.getElementById('emp-inv-modal-title').textContent = '💻 ' + name + ' — IT Inventory';
   document.getElementById('emp-inv-modal-body').innerHTML = '<div style="text-align:center;padding:32px;color:var(--text2);">⏳ Loading...</div>';
 
-  // Get all inventory for this location and filter by name (flexible match)
   const allInv = await DB.getInventory(empCurrentLocation);
   const nameLower = name.toLowerCase().trim();
-  const items = allInv.filter(i => {
+  const items = allInv.filter(function(i) {
     const n = (i.employee||'').toLowerCase().trim();
     if (n === nameLower) return true;
-    // first name match
     const firstName = nameLower.split(' ')[0];
     return n.split(' ')[0] === firstName && firstName.length > 2;
   });
 
   const body = document.getElementById('emp-inv-modal-body');
   if (!items.length) {
-    body.innerHTML = \`<div style="text-align:center;padding:40px;">
-      <div style="font-size:48px;margin-bottom:12px;">📭</div>
-      <div style="color:var(--text2);font-size:15px;">No IT inventory found for <strong style="color:var(--text)">\${name}</strong></div>
-      <div style="color:var(--text2);font-size:13px;margin-top:8px;">Go to IT Inventory tab to add a device for this employee.</div>
-    </div>\`;
+    body.innerHTML = '<div style="text-align:center;padding:40px;">'
+      + '<div style="font-size:48px;margin-bottom:12px;">📭</div>'
+      + '<div style="color:var(--text2);font-size:15px;">No IT inventory found for <strong style="color:var(--text)">' + name + '</strong></div>'
+      + '<div style="color:var(--text2);font-size:13px;margin-top:8px;">Go to IT Inventory tab to add a device for this employee.</div>'
+      + '</div>';
     return;
   }
 
-  body.innerHTML = items.map(item => {
+  body.innerHTML = items.map(function(item) {
     const isPC = item.deviceType === 'PC';
-    const storage = \`\${item.storageType||''} \${item.storageSize||''}GB\${item.extraHdd?'+HDD':''}\`;
-    return \`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-        <div>
-          <span style="font-size:18px;">\${isPC?'🖥️':'💻'}</span>
-          <strong style="font-size:16px;margin-left:6px;">\${item.brand} \${item.model}</strong>
-          <span style="margin-left:10px;background:\${isPC?'rgba(168,85,247,0.15)':'rgba(56,189,248,0.15)'};color:\${isPC?'#a855f7':'#38bdf8'};padding:2px 10px;border-radius:20px;font-size:12px;">\${item.deviceType}</span>
-        </div>
-        \${item.serialNumber ? \`<span style="font-family:monospace;font-size:13px;color:var(--text2);">SN: \${item.serialNumber}</span>\` : ''}
-      </div>
-      \${item.description ? \`<div style="color:var(--text2);font-size:13px;margin-bottom:10px;">📄 \${item.description}</div>\` : ''}
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">
-        \${item.ram ? empInvChip('🧠 RAM', item.ram+'GB') : ''}
-        \${storage.trim() ? empInvChip('💾 Storage', storage) : ''}
-        \${item.mouse ? empInvChip('🖱️ Mouse', item.mouse==='Yes'||item.mouse===true?'Yes':'No') : ''}
-        \${isPC && item.keyboard ? empInvChip('⌨️ Keyboard', item.keyboard) : ''}
-        \${isPC && item.monitorBrand ? empInvChip('🖥️ Monitor', item.monitorBrand+(item.monitorModel?' '+item.monitorModel:'')) : ''}
-        \${isPC && item.upsBrand ? empInvChip('🔋 UPS', item.upsBrand+(item.upsModel?' '+item.upsModel:'')+(item.upsSize?' ('+item.upsSize+')':'')) : ''}
-        \${item.vga && item.vga!=='No' ? empInvChip('🎮 VGA', item.vgaModel||'Yes') : ''}
-      </div>
-      \${item.notes ? \`<div style="margin-top:10px;color:var(--text2);font-size:12px;font-style:italic;">📝 \${item.notes}</div>\` : ''}
-    </div>\`;
+    const storage = (item.storageType||'') + ' ' + (item.storageSize||'') + 'GB' + (item.extraHdd ? '+HDD' : '');
+    const typeColor = isPC ? '#a855f7' : '#38bdf8';
+    const typeBg = isPC ? 'rgba(168,85,247,0.15)' : 'rgba(56,189,248,0.15)';
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px;">'
+      + '<div><span style="font-size:18px;">' + (isPC ? '🖥️' : '💻') + '</span>'
+      + '<strong style="font-size:16px;margin-left:6px;">' + (item.brand||'') + ' ' + (item.model||'') + '</strong>'
+      + '<span style="margin-left:10px;background:' + typeBg + ';color:' + typeColor + ';padding:2px 10px;border-radius:20px;font-size:12px;">' + item.deviceType + '</span></div>'
+      + (item.serialNumber ? '<span style="font-family:monospace;font-size:13px;color:var(--text2);">SN: ' + item.serialNumber + '</span>' : '')
+      + '</div>'
+      + (item.description ? '<div style="color:var(--text2);font-size:13px;margin-bottom:10px;">📄 ' + item.description + '</div>' : '')
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
+      + (item.ram ? empInvChip('🧠 RAM', item.ram + 'GB') : '')
+      + (storage.trim() ? empInvChip('💾 Storage', storage) : '')
+      + (item.mouse ? empInvChip('🖱️ Mouse', (item.mouse==='Yes'||item.mouse===true) ? 'Yes' : 'No') : '')
+      + (isPC && item.keyboard ? empInvChip('⌨️ Keyboard', item.keyboard) : '')
+      + (isPC && item.monitorBrand ? empInvChip('🖥️ Monitor', item.monitorBrand + (item.monitorModel ? ' ' + item.monitorModel : '')) : '')
+      + (isPC && item.upsBrand ? empInvChip('🔋 UPS', item.upsBrand + (item.upsModel ? ' ' + item.upsModel : '') + (item.upsSize ? ' (' + item.upsSize + ')' : '')) : '')
+      + (item.vga && item.vga !== 'No' ? empInvChip('🎮 VGA', item.vgaModel || 'Yes') : '')
+      + '</div>'
+      + (item.notes ? '<div style="margin-top:10px;color:var(--text2);font-size:12px;font-style:italic;">📝 ' + item.notes + '</div>' : '')
+      + '</div>';
   }).join('');
 }
 
 function empInvChip(label, value) {
   if (!value || value === 'No' || value === 'false') return '';
-  return \`<div style="background:var(--surface3,var(--surface));border:1px solid var(--border);border-radius:8px;padding:7px 10px;">
-    <div style="font-size:11px;color:var(--text2);">\${label}</div>
-    <div style="font-size:13px;font-weight:600;margin-top:2px;">\${value}</div>
-  </div>\`;
+  return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;">'
+    + '<div style="font-size:11px;color:var(--text2);">' + label + '</div>'
+    + '<div style="font-size:13px;font-weight:600;margin-top:2px;">' + value + '</div>'
+    + '</div>';
 }
+
+
+function empCloseInvModal() { document.getElementById("emp-inv-modal").style.display="none"; }
 
 function empModal() {
   return `<div id="emp-modal" class="modal-overlay" style="display:none;">
