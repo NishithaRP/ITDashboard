@@ -33,7 +33,7 @@ function invHTML(location, items) {
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:10px;">
       <span style="font-size:18px;">📋</span>
       <span><strong style="color:var(--text);">Excel columns:</strong>
-        Employee Name | Device Type (PC/Laptop) | Brand | Model | Serial Number | RAM | Storage Type | Storage Size | SSD Serial |
+        Employee Name | Device Type (PC/Laptop) | Brand | Model | Description | Serial Number | RAM | Storage Type | Storage Size | SSD Serial |
         Extra HDD (Yes/No) | Extra HDD Size | Extra HDD Serial | Mouse (Yes/No) |
         <em style="color:var(--accent2);">PC only:</em> UPS Brand | UPS Model | UPS Size | Keyboard | Monitor Brand | Monitor Model | Monitor Serial | VGA (Yes/No) | VGA Model
       </span>
@@ -46,7 +46,7 @@ function invHTML(location, items) {
     </div>
 
     <div class="card" style="padding:0;"><div class="table-wrap"><table>
-      <thead><tr><th>Employee</th><th>Type</th><th>Brand / Model</th><th>Serial #</th><th>Storage</th><th>RAM</th><th>Monitor</th><th>Mouse</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Employee</th><th>Type</th><th>Brand / Model</th><th>Description</th><th>Serial #</th><th>Storage</th><th>RAM</th><th>Monitor</th><th>Mouse</th><th>Actions</th></tr></thead>
       <tbody id="inv-tbody">${invRows(items)}</tbody>
     </table></div></div>
   </div>`;
@@ -58,6 +58,7 @@ function invRows(items) {
     <td><strong>${item.employee}</strong></td>
     <td><span class="badge ${item.deviceType==='PC'?'badge-blue':'badge-green'}">${item.deviceType}</span></td>
     <td>${item.brand} ${item.model}</td>
+    <td style="font-size:12px;color:var(--text2);max-width:200px;">${item.description||'—'}</td>
     <td style="font-family:monospace;font-size:12px;">${item.serialNumber||'—'}</td>
     <td>${item.storageType||''} ${item.storageSize?item.storageSize+'GB':'—'}${item.extraHdd?`<br><span class="badge badge-yellow" style="font-size:10px;">+HDD ${item.extraHddSize}GB</span>`:''}</td>
     <td>${item.ram?item.ram+' GB':'—'}</td>
@@ -135,9 +136,19 @@ async function invImportExcel(input) {
       const brand        = val(row, 'Brand');
       const model        = val(row, 'Model');
       const serial       = val(row, 'Serial Number', 'Serial');
+      const description  = val(row, 'Description', 'Desc');
+
+      // --- SKIP instruction/notes rows silently ---
+      if (!employeeName ||
+          employeeName.toLowerCase().includes('write ') ||
+          employeeName.toLowerCase().includes('required') ||
+          employeeName.startsWith('📋') ||
+          employeeName.toUpperCase().startsWith('NOTE')) {
+        if (!employeeName) { warnings.push({ row: rowNum, name: '(blank)', type:'error', msgs: ['Employee Name is required — row skipped'] }); }
+        continue;
+      }
 
       // --- MUST-HAVE FIELDS ---
-      if (!employeeName) { warnings.push({ row: rowNum, name: '(blank)', type:'error', msgs: ['Employee Name is required — row skipped'] }); continue; }
       if (!deviceType)   { rowWarnings.push('⚠️ Device Type is required (PC or Laptop)'); }
       if (!brand)        { rowWarnings.push('⚠️ Brand is required'); }
       if (!model)        { rowWarnings.push('⚠️ Model is required'); }
@@ -179,6 +190,7 @@ async function invImportExcel(input) {
         employee: employeeName,
         deviceType: isPC ? 'PC' : 'Laptop',
         brand, model,
+        description,
         serialNumber: serial,
         ram: val(row, 'RAM', 'RAM (GB)'),
         storageType: val(row, 'Storage Type') || 'SSD',
@@ -330,6 +342,7 @@ function invModal() {
         <div class="form-group"><label>Device Type</label><select id="inv-type" onchange="invTogglePCFields()"><option value="Laptop">Laptop</option><option value="PC">PC (Desktop)</option></select></div>
         <div class="form-group"><label>Brand</label><input id="inv-brand" type="text" placeholder="Dell, HP, Lenovo..."/></div>
         <div class="form-group"><label>Model</label><input id="inv-model" type="text" placeholder="Model name"/></div>
+        <div class="form-group span2"><label>Description</label><input id="inv-description" type="text" placeholder="e.g. Dell Inspiron 15 3511 Core i3-1115G4 3.00GHz"/></div>
         <div class="form-group"><label>Serial Number <span id="inv-serial-hint" style="color:var(--danger);font-size:11px;">(required for Laptop)</span></label><input id="inv-serial" type="text" placeholder="Device serial #"/></div>
         <div class="form-group"><label>RAM (GB)</label><input id="inv-ram" type="number" placeholder="8, 16, 32..."/></div>
         <hr class="form-section-divider"/><div class="form-section-label">Primary Storage</div>
@@ -379,7 +392,7 @@ function invToggleVga() { document.getElementById('inv-vga-fields').style.displa
 function invOpenAdd() {
   invEditId = null;
   document.getElementById('inv-modal-title').textContent = 'Add Device';
-  ['inv-employee','inv-brand','inv-model','inv-serial','inv-ram','inv-storage-size','inv-ssd-serial','inv-extra-hdd-size','inv-extra-hdd-serial','inv-ups-brand','inv-ups-model','inv-ups-size','inv-keyboard','inv-monitor-brand','inv-monitor-model','inv-monitor-serial','inv-vga-model','inv-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['inv-employee','inv-brand','inv-model','inv-description','inv-serial','inv-ram','inv-storage-size','inv-ssd-serial','inv-extra-hdd-size','inv-extra-hdd-serial','inv-ups-brand','inv-ups-model','inv-ups-size','inv-keyboard','inv-monitor-brand','inv-monitor-model','inv-monitor-serial','inv-vga-model','inv-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   ['inv-extra-hdd','inv-mouse','inv-vga'].forEach(id => { const el=document.getElementById(id); if(el) el.checked=false; });
   document.getElementById('inv-extra-hdd-fields').style.display='none';
   document.getElementById('inv-vga-fields').style.display='none';
@@ -398,6 +411,7 @@ async function invOpenEdit(id) {
   document.getElementById('inv-brand').value = item.brand||'';
   document.getElementById('inv-model').value = item.model||'';
   document.getElementById('inv-serial').value = item.serialNumber||'';
+  document.getElementById('inv-description').value = item.description||'';
   document.getElementById('inv-ram').value = item.ram||'';
   document.getElementById('inv-storage-type').value = item.storageType||'SSD';
   document.getElementById('inv-storage-size').value = item.storageSize||'';
@@ -439,6 +453,7 @@ async function invSave() {
   const item = {
     id: invEditId||genId(), employee, deviceType, brand, model,
     serialNumber: serial,
+    description: document.getElementById('inv-description').value.trim(),
     ram: document.getElementById('inv-ram').value,
     storageType: document.getElementById('inv-storage-type').value,
     storageSize: document.getElementById('inv-storage-size').value,
