@@ -1523,10 +1523,18 @@ async function invImportExcel(input) {
       // Laptop: serial number is MUST
       if (isLaptop && !serial) rowWarnings.push('❌ Serial Number is required for Laptops');
 
-      // Employee name validation against employees list
+      // Employee name validation against employees list (fuzzy - first name match ok)
       if (employeeName && employees.length > 0) {
-        if (!employeeNames.has(employeeName.toLowerCase())) {
-          rowWarnings.push(`🔴 "${employeeName}" not found in Employees list for ${invCurrentLocation}`);
+        const empLower = employeeName.toLowerCase().trim();
+        const exactMatch = employeeNames.has(empLower);
+        if (!exactMatch) {
+          // Try first-name match
+          const firstName = empLower.split(' ')[0];
+          const firstNameMatch = firstName.length > 2 && [...employeeNames].some(n => n.split(' ')[0] === firstName);
+          if (!firstNameMatch) {
+            // Just a warning - don't block import
+            rowWarnings.push(`⚠️ "${employeeName}" not found in Employees list — will still be imported`);
+          }
         }
       }
 
