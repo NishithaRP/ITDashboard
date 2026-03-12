@@ -1432,6 +1432,128 @@ function invEmpHideDropdown() {
   document.getElementById('inv-emp-dropdown').style.display = 'none';
 }
 
+
+// ======================================================
+// INTERACTIVE NAME RESOLVER
+// ======================================================
+function invSimilarityScore(a, b) {
+  a = a.toLowerCase().trim(); b = b.toLowerCase().trim();
+  if (a === b) return 100;
+  const aW = a.split(' '); const bW = b.split(' ');
+  // Any word match
+  let score = 0;
+  for (const aw of aW) for (const bw of bW) {
+    if (aw === bw && aw.length > 2) score += 40;
+    else if (bw.includes(aw) && aw.length > 2) score += 20;
+    else if (aw.includes(bw) && bw.length > 2) score += 20;
+  }
+  return Math.min(score, 99);
+}
+
+function invShowNameResolver(unmatchedNames, employees, totalValid) {
+  const overlay = document.getElementById('inv-import-overlay');
+  overlay.style.display = 'flex';
+
+  const resolverHTML = `
+    <div style="width:100%;max-width:580px;">
+      <div style="font-size:22px;margin-bottom:6px;">🔍 Match Employee Names</div>
+      <div style="color:var(--text2);font-size:13px;margin-bottom:20px;">
+        ${unmatchedNames.length} name(s) from Excel weren't found in the Employees list.<br/>
+        Select the correct employee for each, or choose "Skip" to import as-is.
+      </div>
+      <div id="inv-resolver-list">
+        ${unmatchedNames.map((name, idx) => {
+          const suggestions = employees
+            .map(e => ({ e, score: invSimilarityScore(name, e.name) }))
+            .sort((a,b) => b.score - a.score)
+            .slice(0, 6);
+          const opts = suggestions.map(({e, score}) =>
+            `<option value="${e.name}" ${idx===0&&score>30?'selected':''}>${e.name}${e.department?' · '+e.department:''} ${score>50?'⭐':score>25?'🔵':''}</option>`
+          ).join('');
+          return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:120px;">
+                <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">FROM EXCEL</div>
+                <strong style="color:#f59e0b;">"${name}"</strong>
+              </div>
+              <div style="font-size:18px;color:var(--text2);">→</div>
+              <div style="flex:2;min-width:180px;">
+                <div style="font-size:11px;color:var(--text2);margin-bottom:3px;">MATCH TO EMPLOYEE</div>
+                <select id="inv-resolve-${idx}" style="width:100%;background:var(--surface3,var(--bg));border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:13px;font-family:inherit;">
+                  <option value="__skip__">— Keep as "${name}" (import as-is) —</option>
+                  ${opts}
+                </select>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+        <button onclick="invCancelResolver()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-size:13px;">✕ Cancel Import</button>
+        <button onclick="invConfirmResolver()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;">✅ Confirm & Import ${totalValid} Device(s)</button>
+      </div>
+    </div>`;
+
+  document.getElementById('inv-import-status').innerHTML = resolverHTML;
+  document.getElementById('inv-import-bar').style.width = '0%';
+  document.getElementById('inv-import-count').textContent = '';
+}
+
+function invCancelResolver() {
+  invImportDone();
+  window._invPendingImport = null;
+  window._invUnmatched = null;
+  window._invNameMap = {};
+}
+
+async function invConfirmResolver() {
+  const unmatched = window._invUnmatched || [];
+  const nameMap = {};
+
+  // Build name mapping from selects
+  unmatched.forEach((name, idx) => {
+    const sel = document.getElementById('inv-resolve-' + idx);
+    if (sel && sel.value !== '__skip__') {
+      nameMap[name.toLowerCase().trim()] = sel.value;
+    }
+  });
+
+  // Apply mappings to toSave
+  const toSave = (window._invPendingImport || []).map(item => {
+    const key = (item.employee||'').toLowerCase().trim();
+    if (nameMap[key]) {
+      return Object.assign({}, item, { employee: nameMap[key] });
+    }
+    return item;
+  });
+
+  window._invPendingImport = toSave;
+  window._invNameMap = nameMap;
+  window._invUnmatched = null;
+
+  // Show warnings if any, else save
+  const warnings = window._invWarnings || [];
+  if (warnings.length > 0) {
+    document.getElementById('inv-import-status').textContent = `Found ${warnings.length} issue(s). Review below then confirm.`;
+    const warnHTML = warnings.map(w => `
+      <div class="import-warn-row import-warn-${w.type}">
+        <div class="import-warn-header">
+          <span>${w.type==='error'?'❌':w.type==='skip'?'⏭️':'⚠️'} Row ${w.row}: <strong>${w.name}</strong></span>
+        </div>
+        ${w.msgs.map(m => '<div class="import-warn-msg">'+m+'</div>').join('')}
+      </div>`).join('');
+    document.getElementById('inv-import-warnings').innerHTML = warnHTML;
+    document.getElementById('inv-import-confirm-area').style.display = 'flex';
+    document.getElementById('inv-import-confirm-text').textContent =
+      toSave.length > 0
+        ? 'Proceed to import ' + toSave.length + ' valid device(s)?'
+        : 'No valid rows to import.';
+    document.getElementById('inv-import-confirm-btn').style.display = toSave.length > 0 ? 'inline-block' : 'none';
+  } else {
+    await invDoSave(toSave, null);
+  }
+}
+
 async function invFilter() {
   const q = document.getElementById('inv-search').value.toLowerCase();
   const items = (await DB.getInventory(invCurrentLocation)).filter(i =>
@@ -1523,18 +1645,11 @@ async function invImportExcel(input) {
       // Laptop: serial number is MUST
       if (isLaptop && !serial) rowWarnings.push('❌ Serial Number is required for Laptops');
 
-      // Employee name validation against employees list (fuzzy - first name match ok)
+      // Employee name: just collect unmatched names, we'll resolve after parsing
       if (employeeName && employees.length > 0) {
         const empLower = employeeName.toLowerCase().trim();
-        const exactMatch = employeeNames.has(empLower);
-        if (!exactMatch) {
-          // Try first-name match
-          const firstName = empLower.split(' ')[0];
-          const firstNameMatch = firstName.length > 2 && [...employeeNames].some(n => n.split(' ')[0] === firstName);
-          if (!firstNameMatch) {
-            // Just a warning - don't block import
-            rowWarnings.push(`⚠️ "${employeeName}" not found in Employees list — will still be imported`);
-          }
+        if (!employeeNames.has(empLower)) {
+          // Mark as needing resolution — store original name
         }
       }
 
@@ -1587,6 +1702,25 @@ async function invImportExcel(input) {
       toSave.push(item);
     }
 
+    // ---- CHECK FOR UNMATCHED EMPLOYEES ----
+    const unmatchedNames = [...new Set(
+      toSave
+        .filter(item => employees.length > 0 && !employeeNames.has((item.employee||'').toLowerCase().trim()))
+        .map(item => item.employee)
+    )];
+
+    if (unmatchedNames.length > 0) {
+      // Store everything for after resolution
+      window._invPendingImport = toSave;
+      window._invEmployeeList = employees;
+      window._invUnmatched = unmatchedNames;
+      window._invNameMap = {}; // will store resolved name mappings
+      window._invWarnings = warnings;
+      input.value = '';
+      invShowNameResolver(unmatchedNames, employees, toSave.length);
+      return;
+    }
+
     // ---- SHOW WARNINGS BEFORE SAVING ----
     if (warnings.length > 0) {
       document.getElementById('inv-import-status').textContent = `Found ${warnings.length} issue(s). Review below then confirm.`;
@@ -1604,8 +1738,6 @@ async function invImportExcel(input) {
           ? `Proceed to import ${toSave.length} valid device(s)? (Issues above will be skipped)`
           : 'No valid rows to import. Please fix the Excel file and try again.';
       document.getElementById('inv-import-confirm-btn').style.display = toSave.length > 0 ? 'inline-block' : 'none';
-
-      // Store toSave for after confirmation
       window._invPendingImport = toSave;
       input.value = '';
       return;
@@ -3080,5 +3212,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 </script>
+
 </body>
 </html>
