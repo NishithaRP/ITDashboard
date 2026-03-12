@@ -5,7 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Polydime IT</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-  <style>
+  
+  <!-- SheetJS for Excel import -->
+  
+</head>
+<body>
+  <div id="app"></div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+<style>
 :root {
   --bg: #0d1117;
   --surface: #161b22;
@@ -785,21 +801,6 @@ tbody td {
 th.cb-col, td.cb-col { width: 36px; padding: 0 8px; text-align: center; }
 
 </style>
-  <!-- SheetJS for Excel import -->
-  
-</head>
-<body>
-  <div id="app"></div>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ============================================================
@@ -980,8 +981,9 @@ function showLogin() {
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
-  document.getElementById('user-display').textContent = currentUser.name;
   appInit();
+  const ud = document.getElementById('user-display');
+  if (ud) ud.textContent = currentUser.name;
 }
 
 function doLogin() {
