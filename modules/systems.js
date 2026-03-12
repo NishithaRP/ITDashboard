@@ -29,10 +29,17 @@ function systemsHTML(location, rdpList, erpList) {
         <div style="font-weight:700;font-size:15px;">🖥️ RDP (Remote Desktop) Accounts</div>
         <button class="btn btn-secondary" onclick="sysOpenAdd('rdp')">+ Add RDP</button>
       </div>
+      <div class="bulk-bar" id="rdp-bulk-bar">
+        <span class="bulk-bar-count" id="rdp-bulk-count">0 selected</span>
+        <span class="bulk-bar-info">RDP accounts</span>
+        <button class="btn-bulk-cancel" onclick="rdpBulkCancel()">✕ Cancel</button>
+        <button class="btn-bulk-delete" onclick="rdpBulkDelete()">🗑 Delete Selected</button>
+      </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Label</th><th>Computer Name</th><th>IP Address</th><th>Username</th><th>Password</th><th>Port</th><th>Notes</th><th>Actions</th></tr></thead>
-        <tbody>${rdpList.length===0?`<tr><td colspan="8"><div class="empty-state" style="padding:24px;"><div class="icon">🖥️</div><h3>No RDP accounts yet</h3></div></td></tr>`:
+        <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="rdp-check-all" onchange="rdpToggleAll(this)"/></th><th>Label</th><th>Computer Name</th><th>IP Address</th><th>Username</th><th>Password</th><th>Port</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody>${rdpList.length===0?`<tr><td colspan="9"><div class="empty-state" style="padding:24px;"><div class="icon">🖥️</div><h3>No RDP accounts yet</h3></div></td></tr>`:
           rdpList.map(r=>`<tr>
+            <td class="cb-col"><input type="checkbox" class="row-checkbox rdp-row-cb" data-id="${r.id}" onchange="rdpRowCheck()"/></td>
             <td><strong>${r.label}</strong></td>
             <td>${r.computerName||'—'}</td>
             <td style="font-family:monospace;font-size:12px;">${r.ipAddress||'—'}</td>
@@ -58,10 +65,17 @@ function systemsHTML(location, rdpList, erpList) {
         <div style="font-weight:700;font-size:15px;">📊 ERP Accounts</div>
         <button class="btn btn-secondary" onclick="sysOpenAdd('erp')">+ Add ERP</button>
       </div>
+      <div class="bulk-bar" id="erp-bulk-bar">
+        <span class="bulk-bar-count" id="erp-bulk-count">0 selected</span>
+        <span class="bulk-bar-info">ERP accounts</span>
+        <button class="btn-bulk-cancel" onclick="erpBulkCancel()">✕ Cancel</button>
+        <button class="btn-bulk-delete" onclick="erpBulkDelete()">🗑 Delete Selected</button>
+      </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Employee</th><th>Department</th><th>ERP System</th><th>Username</th><th>Password</th><th>Access Level</th><th>Notes</th><th>Actions</th></tr></thead>
-        <tbody>${erpList.length===0?`<tr><td colspan="8"><div class="empty-state" style="padding:24px;"><div class="icon">📊</div><h3>No ERP accounts yet</h3></div></td></tr>`:
+        <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="erp-check-all" onchange="erpToggleAll(this)"/></th><th>Employee</th><th>Department</th><th>ERP System</th><th>Username</th><th>Password</th><th>Access Level</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody>${erpList.length===0?`<tr><td colspan="9"><div class="empty-state" style="padding:24px;"><div class="icon">📊</div><h3>No ERP accounts yet</h3></div></td></tr>`:
           erpList.map(e=>`<tr>
+            <td class="cb-col"><input type="checkbox" class="row-checkbox erp-row-cb" data-id="${e.id}" onchange="erpRowCheck()"/></td>
             <td><strong>${e.employee}</strong></td>
             <td>${e.department||'—'}</td>
             <td><span class="badge badge-blue">${e.erpSystem||'—'}</span></td>
@@ -82,6 +96,54 @@ function systemsHTML(location, rdpList, erpList) {
       </table></div>
     </div>
   </div>`;
+}
+
+
+// ---- BULK DELETE RDP ----
+function rdpRowCheck() {
+  const cbs = document.querySelectorAll('.rdp-row-cb');
+  const checked = document.querySelectorAll('.rdp-row-cb:checked');
+  document.getElementById('rdp-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('rdp-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('rdp-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('rdp-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function rdpToggleAll(cb) { document.querySelectorAll('.rdp-row-cb').forEach(c => c.checked = cb.checked); rdpRowCheck(); }
+function rdpBulkCancel() {
+  document.querySelectorAll('.rdp-row-cb').forEach(c => c.checked = false);
+  document.getElementById('rdp-check-all').checked = false;
+  document.getElementById('rdp-bulk-bar').classList.remove('visible');
+}
+async function rdpBulkDelete() {
+  const ids = [...document.querySelectorAll('.rdp-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} RDP account(s)?`)) return;
+  for (const id of ids) await DB.deleteRDP(id);
+  toast(`🗑 ${ids.length} RDP account(s) deleted`);
+  systemsRender(sysCurrentLocation);
+}
+// ---- BULK DELETE ERP ----
+function erpRowCheck() {
+  const cbs = document.querySelectorAll('.erp-row-cb');
+  const checked = document.querySelectorAll('.erp-row-cb:checked');
+  document.getElementById('erp-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('erp-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('erp-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('erp-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function erpToggleAll(cb) { document.querySelectorAll('.erp-row-cb').forEach(c => c.checked = cb.checked); erpRowCheck(); }
+function erpBulkCancel() {
+  document.querySelectorAll('.erp-row-cb').forEach(c => c.checked = false);
+  document.getElementById('erp-check-all').checked = false;
+  document.getElementById('erp-bulk-bar').classList.remove('visible');
+}
+async function erpBulkDelete() {
+  const ids = [...document.querySelectorAll('.erp-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} ERP account(s)?`)) return;
+  for (const id of ids) await DB.deleteERP(id);
+  toast(`🗑 ${ids.length} ERP account(s) deleted`);
+  systemsRender(sysCurrentLocation);
 }
 
 function sysTogglePw(elId, pw) {

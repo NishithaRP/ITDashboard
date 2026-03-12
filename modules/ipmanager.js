@@ -27,16 +27,23 @@ function ipHTML(location, ips) {
       <div class="stat-card"><div class="stat-label">Assigned</div><div class="stat-value" style="color:var(--accent)">${used}</div></div>
       <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value" style="color:var(--warning)">${ips.filter(i=>!i.employee).length}</div></div>
     </div>
+    <div class="bulk-bar" id="ip-bulk-bar">
+      <span class="bulk-bar-count" id="ip-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">IPs</span>
+      <button class="btn-bulk-cancel" onclick="ipBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="ipBulkDelete()">🗑 Delete Selected</button>
+    </div>
     <div class="card" style="padding:0;"><div class="table-wrap"><table>
-      <thead><tr><th>IP Address</th><th>Employee</th><th>Device</th><th>MAC Address</th><th>Department</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="ip-check-all" onchange="ipToggleAll(this)"/></th><th>IP Address</th><th>Employee</th><th>Device</th><th>MAC Address</th><th>Department</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
       <tbody id="ip-tbody">${ipRows(ips)}</tbody>
     </table></div></div>
   </div>`;
 }
 
 function ipRows(ips) {
-  if (ips.length === 0) return `<tr><td colspan="8"><div class="empty-state"><div class="icon">🌐</div><h3>No IPs assigned yet</h3></div></td></tr>`;
+  if (ips.length === 0) return `<tr><td colspan="9"><div class="empty-state"><div class="icon">🌐</div><h3>No IPs assigned yet</h3></div></td></tr>`;
   return ips.map(i=>`<tr>
+    <td class="cb-col"><input type="checkbox" class="row-checkbox ip-row-cb" data-id="${i.id}" onchange="ipRowCheck()"/></td>
     <td style="font-family:monospace;font-weight:700;color:var(--accent)">${i.ipAddress}</td>
     <td>${i.employee||'—'}</td><td>${i.device||'—'}</td>
     <td style="font-family:monospace;font-size:12px;">${i.mac||'—'}</td>
@@ -76,6 +83,30 @@ function ipModal() {
       </div>
     </div>
   </div>`;
+}
+
+
+function ipRowCheck() {
+  const cbs = document.querySelectorAll('.ip-row-cb');
+  const checked = document.querySelectorAll('.ip-row-cb:checked');
+  document.getElementById('ip-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('ip-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('ip-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('ip-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function ipToggleAll(cb) { document.querySelectorAll('.ip-row-cb').forEach(c => c.checked = cb.checked); ipRowCheck(); }
+function ipBulkCancel() {
+  document.querySelectorAll('.ip-row-cb').forEach(c => c.checked = false);
+  document.getElementById('ip-check-all').checked = false;
+  document.getElementById('ip-bulk-bar').classList.remove('visible');
+}
+async function ipBulkDelete() {
+  const ids = [...document.querySelectorAll('.ip-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} IP assignment(s)?`)) return;
+  for (const id of ids) await DB.deleteIP(id);
+  toast(`🗑 ${ids.length} IP(s) deleted`);
+  ipRender(ipCurrentLocation);
 }
 
 function ipOpenAdd() {

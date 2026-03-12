@@ -18,10 +18,17 @@ function mobilesHTML(location, mobiles) {
       <div><div class="section-title">📱 Mobile Phones</div><div class="section-subtitle">${location} — ${mobiles.length} device(s)</div></div>
       <button class="btn btn-secondary" onclick="mobileOpenAdd()">+ Add Mobile</button>
     </div>
+    <div class="bulk-bar" id="mob-bulk-bar">
+      <span class="bulk-bar-count" id="mob-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">phones</span>
+      <button class="btn-bulk-cancel" onclick="mobBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="mobBulkDelete()">🗑 Delete Selected</button>
+    </div>
     <div class="card" style="padding:0;"><div class="table-wrap"><table>
-      <thead><tr><th>Employee</th><th>Department</th><th>Brand / Model</th><th>Serial #</th><th>IMEI</th><th>Mobile Number</th><th>Actions</th></tr></thead>
-      <tbody>${mobiles.length===0?`<tr><td colspan="7"><div class="empty-state"><div class="icon">📱</div><h3>No mobile phones yet</h3></div></td></tr>`:
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="mob-check-all" onchange="mobToggleAll(this)"/></th><th>Employee</th><th>Department</th><th>Brand / Model</th><th>Serial #</th><th>IMEI</th><th>Mobile Number</th><th>Actions</th></tr></thead>
+      <tbody>${mobiles.length===0?`<tr><td colspan="8"><div class="empty-state"><div class="icon">📱</div><h3>No mobile phones yet</h3></div></td></tr>`:
         mobiles.map(m=>`<tr>
+          <td class="cb-col"><input type="checkbox" class="row-checkbox mob-row-cb" data-id="${m.id}" onchange="mobRowCheck()"/></td>
           <td><strong>${m.employee}</strong></td><td>${m.department}</td>
           <td>${m.brand} ${m.model}</td>
           <td style="font-family:monospace;font-size:12px;">${m.serialNumber}</td>
@@ -56,6 +63,30 @@ function mobileModal() {
       </div>
     </div>
   </div>`;
+}
+
+
+function mobRowCheck() {
+  const cbs = document.querySelectorAll('.mob-row-cb');
+  const checked = document.querySelectorAll('.mob-row-cb:checked');
+  document.getElementById('mob-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('mob-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('mob-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('mob-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function mobToggleAll(cb) { document.querySelectorAll('.mob-row-cb').forEach(c => c.checked = cb.checked); mobRowCheck(); }
+function mobBulkCancel() {
+  document.querySelectorAll('.mob-row-cb').forEach(c => c.checked = false);
+  document.getElementById('mob-check-all').checked = false;
+  document.getElementById('mob-bulk-bar').classList.remove('visible');
+}
+async function mobBulkDelete() {
+  const ids = [...document.querySelectorAll('.mob-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} phone(s)?`)) return;
+  for (const id of ids) await DB.deleteMobile(id);
+  toast(`🗑 ${ids.length} phone(s) deleted`);
+  mobilesRender(mobileCurrentLocation);
 }
 
 function mobileOpenAdd() {

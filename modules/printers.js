@@ -18,10 +18,17 @@ function printersHTML(location, printers) {
       <div><div class="section-title">🖨️ Printers</div><div class="section-subtitle">${location} — ${printers.length} printer(s)</div></div>
       <button class="btn btn-secondary" onclick="printerOpenAdd()">+ Add Printer</button>
     </div>
+    <div class="bulk-bar" id="pr-bulk-bar">
+      <span class="bulk-bar-count" id="pr-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">printers</span>
+      <button class="btn-bulk-cancel" onclick="prBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="prBulkDelete()">🗑 Delete Selected</button>
+    </div>
     <div class="card" style="padding:0;"><div class="table-wrap"><table>
-      <thead><tr><th>Brand / Model</th><th>Serial #</th><th>Color</th><th>Duplex</th><th>Department</th><th>Network</th><th>IP Address</th><th>Actions</th></tr></thead>
-      <tbody>${printers.length===0?`<tr><td colspan="8"><div class="empty-state"><div class="icon">🖨️</div><h3>No printers yet</h3></div></td></tr>`:
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="pr-check-all" onchange="prToggleAll(this)"/></th><th>Brand / Model</th><th>Serial #</th><th>Color</th><th>Duplex</th><th>Department</th><th>Network</th><th>IP Address</th><th>Actions</th></tr></thead>
+      <tbody>${printers.length===0?`<tr><td colspan="9"><div class="empty-state"><div class="icon">🖨️</div><h3>No printers yet</h3></div></td></tr>`:
         printers.map(p=>`<tr>
+          <td class="cb-col"><input type="checkbox" class="row-checkbox pr-row-cb" data-id="${p.id}" onchange="prRowCheck()"/></td>
           <td><strong>${p.brand}</strong><br><span style="font-size:12px;color:var(--text2)">${p.model}</span></td>
           <td style="font-family:monospace;font-size:12px;">${p.serialNumber}</td>
           <td><span class="badge ${p.color?'badge-blue':'badge-gray'}">${p.color?'Color':'B&W'}</span></td>
@@ -59,6 +66,30 @@ function printerModal() {
       </div>
     </div>
   </div>`;
+}
+
+
+function prRowCheck() {
+  const cbs = document.querySelectorAll('.pr-row-cb');
+  const checked = document.querySelectorAll('.pr-row-cb:checked');
+  document.getElementById('pr-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('pr-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('pr-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('pr-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function prToggleAll(cb) { document.querySelectorAll('.pr-row-cb').forEach(c => c.checked = cb.checked); prRowCheck(); }
+function prBulkCancel() {
+  document.querySelectorAll('.pr-row-cb').forEach(c => c.checked = false);
+  document.getElementById('pr-check-all').checked = false;
+  document.getElementById('pr-bulk-bar').classList.remove('visible');
+}
+async function prBulkDelete() {
+  const ids = [...document.querySelectorAll('.pr-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} printer(s)?`)) return;
+  for (const id of ids) await DB.deletePrinter(id);
+  toast(`🗑 ${ids.length} printer(s) deleted`);
+  printersRender(printerCurrentLocation);
 }
 
 function printerToggleIP() { document.getElementById('pr-ip-field').style.display = document.getElementById('pr-network').checked ? 'grid' : 'none'; }

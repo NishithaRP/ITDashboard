@@ -70,11 +70,18 @@ function empHTML(location, employees) {
       ${depts.map(d => `<button class="filter-btn ${empDeptFilter===d?'active':''}" onclick="empSetDept('${d}',this)">${d} <span style="background:var(--surface3);border-radius:8px;padding:0 6px;font-size:11px;">${byDept[d].length}</span></button>`).join('')}
     </div>
 
+    <div class="bulk-bar" id="emp-bulk-bar">
+      <span class="bulk-bar-count" id="emp-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">employees</span>
+      <button class="btn-bulk-cancel" onclick="empBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="empBulkDelete()">🗑 Delete Selected</button>
+    </div>
     <div class="card" style="padding:0;">
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th class="cb-col"><input type="checkbox" class="row-checkbox" id="emp-check-all" onchange="empToggleAll(this)"/></th>
               <th>#</th>
               <th>Name</th>
               <th>Location</th>
@@ -114,12 +121,13 @@ function empRows(employees) {
   if (empStatusFilter !== 'all') filtered = filtered.filter(e => (e.status||'employed') === empStatusFilter);
   if (empDeptFilter !== 'all') filtered = filtered.filter(e => e.department === empDeptFilter);
 
-  if (filtered.length === 0) return `<tr><td colspan="7"><div class="empty-state" style="padding:32px;"><div class="icon">👥</div><h3>No employees found</h3></div></td></tr>`;
+  if (filtered.length === 0) return `<tr><td colspan="8"><div class="empty-state" style="padding:32px;"><div class="icon">👥</div><h3>No employees found</h3></div></td></tr>`;
 
   return filtered.map((e, i) => {
     const status = e.status || 'employed';
     const isResigned = status === 'resigned';
     return `<tr data-dept="${e.department||''}" data-status="${status}" style="${isResigned?'opacity:0.55;':''}">
+      <td class="cb-col"><input type="checkbox" class="row-checkbox emp-row-cb" data-id="${e.id}" onchange="empRowCheck()"/></td>
       <td style="color:var(--text2);font-size:13px;">${i+1}</td>
       <td><strong style="${isResigned?'text-decoration:line-through;':''}">${e.name}</strong></td>
       <td><span class="badge badge-blue" style="font-size:11px;">${e.location||empCurrentLocation}</span></td>
@@ -136,6 +144,35 @@ function empRows(employees) {
       </td>
     </tr>`;
   }).join('');
+}
+
+
+// ---- BULK DELETE ----
+function empRowCheck() {
+  const cbs = document.querySelectorAll('.emp-row-cb');
+  const checked = document.querySelectorAll('.emp-row-cb:checked');
+  document.getElementById('emp-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('emp-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('emp-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('emp-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function empToggleAll(cb) {
+  document.querySelectorAll('.emp-row-cb').forEach(c => c.checked = cb.checked);
+  empRowCheck();
+}
+function empBulkCancel() {
+  document.querySelectorAll('.emp-row-cb').forEach(c => c.checked = false);
+  document.getElementById('emp-check-all').checked = false;
+  document.getElementById('emp-bulk-bar').classList.remove('visible');
+}
+async function empBulkDelete() {
+  const ids = [...document.querySelectorAll('.emp-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} selected employee(s)?`)) return;
+  toast('Deleting...');
+  for (const id of ids) await DB.deleteEmployee(id);
+  toast(`🗑 ${ids.length} employee(s) deleted`);
+  employeesRender(empCurrentLocation);
 }
 
 // ---- FILTER FUNCTIONS ----

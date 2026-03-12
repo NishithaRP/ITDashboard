@@ -45,16 +45,24 @@ function invHTML(location, items) {
       <div class="stat-card"><div class="stat-label">🖥️ Laptops</div><div class="stat-value" style="color:var(--warning)">${laptops}</div></div>
     </div>
 
+    <!-- Bulk Delete Bar -->
+    <div class="bulk-bar" id="inv-bulk-bar">
+      <span class="bulk-bar-count" id="inv-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">devices</span>
+      <button class="btn-bulk-cancel" onclick="invBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="invBulkDelete()">🗑 Delete Selected</button>
+    </div>
     <div class="card" style="padding:0;"><div class="table-wrap"><table>
-      <thead><tr><th>Employee</th><th>Type</th><th>Brand / Model</th><th>Description</th><th>Serial #</th><th>Storage</th><th>RAM</th><th>Monitor</th><th>Mouse</th><th>Actions</th></tr></thead>
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="inv-check-all" onchange="invToggleAll(this)" title="Select all"/></th><th>Employee</th><th>Type</th><th>Brand / Model</th><th>Description</th><th>Serial #</th><th>Storage</th><th>RAM</th><th>Monitor</th><th>Mouse</th><th>Actions</th></tr></thead>
       <tbody id="inv-tbody">${invRows(items)}</tbody>
     </table></div></div>
   </div>`;
 }
 
 function invRows(items) {
-  if (items.length === 0) return `<tr><td colspan="9"><div class="empty-state"><div class="icon">💻</div><h3>No devices yet</h3><p>Add manually or import from Excel</p></div></td></tr>`;
+  if (items.length === 0) return `<tr><td colspan="10"><div class="empty-state"><div class="icon">💻</div><h3>No devices yet</h3><p>Add manually or import from Excel</p></div></td></tr>`;
   return items.map(item => `<tr>
+    <td class="cb-col"><input type="checkbox" class="row-checkbox inv-row-cb" data-id="${item.id}" onchange="invRowCheck()"/></td>
     <td><strong>${item.employee}</strong></td>
     <td><span class="badge ${item.deviceType==='PC'?'badge-blue':'badge-green'}">${item.deviceType}</span></td>
     <td>${item.brand} ${item.model}</td>
@@ -69,6 +77,35 @@ function invRows(items) {
       <button class="btn btn-small btn-danger" onclick="invDelete('${item.id}')">Del</button>
     </td>
   </tr>`).join('');
+}
+
+
+// ---- BULK DELETE ----
+function invRowCheck() {
+  const cbs = document.querySelectorAll('.inv-row-cb');
+  const checked = document.querySelectorAll('.inv-row-cb:checked');
+  document.getElementById('inv-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('inv-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('inv-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('inv-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function invToggleAll(cb) {
+  document.querySelectorAll('.inv-row-cb').forEach(c => c.checked = cb.checked);
+  invRowCheck();
+}
+function invBulkCancel() {
+  document.querySelectorAll('.inv-row-cb').forEach(c => c.checked = false);
+  document.getElementById('inv-check-all').checked = false;
+  document.getElementById('inv-bulk-bar').classList.remove('visible');
+}
+async function invBulkDelete() {
+  const ids = [...document.querySelectorAll('.inv-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} selected device(s)?`)) return;
+  toast('Deleting...');
+  for (const id of ids) await DB.deleteInventoryItem(id);
+  toast(`🗑 ${ids.length} device(s) deleted`);
+  inventoryRender(invCurrentLocation);
 }
 
 async function invFilter() {
