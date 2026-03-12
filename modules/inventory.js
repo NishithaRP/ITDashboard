@@ -108,6 +108,94 @@ async function invBulkDelete() {
   inventoryRender(invCurrentLocation);
 }
 
+
+// ======================================================
+// EMPLOYEE NAME SMART MATCH
+// ======================================================
+let invEmpList = [];   // loaded when modal opens
+let invEmpConfirmed = false;
+
+async function invLoadEmpList() {
+  invEmpList = await DB.getEmployees(invCurrentLocation);
+}
+
+function invSimilarity(a, b) {
+  a = a.toLowerCase().trim(); b = b.toLowerCase().trim();
+  if (a === b) return 1;
+  const aWords = a.split(/\s+/); const bWords = b.split(/\s+/);
+  // First or last name exact match = high score
+  for (const aw of aWords) for (const bw of bWords) {
+    if (aw === bw && aw.length > 2) return 0.85;
+  }
+  // Starts-with
+  if (b.startsWith(a) || a.startsWith(b)) return 0.8;
+  // Character overlap (simple)
+  const setA = new Set(a.replace(/\s/g,'')); const setB = new Set(b.replace(/\s/g,''));
+  let inter = 0; setA.forEach(ch => { if(setB.has(ch)) inter++; });
+  return inter / Math.max(setA.size, setB.size) * 0.7;
+}
+
+function invEmpSearch(query) {
+  invEmpConfirmed = false;
+  document.getElementById('inv-emp-confirm').style.display = 'none';
+  const dd = document.getElementById('inv-emp-dropdown');
+  if (!query || query.length < 1) { dd.style.display = 'none'; return; }
+  const q = query.toLowerCase().trim();
+  const scored = invEmpList
+    .map(e => ({ e, score: invSimilarity(q, e.name) }))
+    .filter(x => x.score > 0.2)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 6);
+  if (!scored.length) {
+    dd.innerHTML = '<div style="padding:10px 14px;color:var(--text2);font-size:13px;">No matching employees found</div>';
+    dd.style.display = 'block'; return;
+  }
+  dd.innerHTML = scored.map(({e, score}) => {
+    const tag = score === 1 ? '✅ Exact match' : score >= 0.85 ? '🔵 Name match' : '🟡 Similar';
+    return `<div onclick="invEmpSelect('${e.name.replace(/'/g,"\\'")}','${e.department||''}','${e.designation||''}')"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"
+      onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <div>
+        <strong style="font-size:13px;">${e.name}</strong>
+        <span style="color:var(--text2);font-size:12px;margin-left:8px;">${e.department||''} ${e.designation?'· '+e.designation:''}</span>
+      </div>
+      <span style="font-size:11px;color:var(--text2);">${tag}</span>
+    </div>`;
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function invEmpSelect(name, dept, desig) {
+  document.getElementById('inv-employee').value = name;
+  document.getElementById('inv-emp-dropdown').style.display = 'none';
+  invEmpConfirmed = true;
+  const confirm = document.getElementById('inv-emp-confirm');
+  confirm.style.display = 'block';
+  confirm.innerHTML = `<span style="color:#38bdf8;">✅ Linked to <strong>${name}</strong>${dept ? ' · ' + dept : ''}${desig ? ' · ' + desig : ''}</span>
+    <button onclick="invEmpClear()" style="float:right;background:none;border:none;color:var(--text2);cursor:pointer;font-size:12px;">✕ Change</button>`;
+}
+
+function invEmpClear() {
+  document.getElementById('inv-employee').value = '';
+  document.getElementById('inv-emp-confirm').style.display = 'none';
+  document.getElementById('inv-emp-dropdown').style.display = 'none';
+  invEmpConfirmed = false;
+  document.getElementById('inv-employee').focus();
+}
+
+function invEmpHideDropdown() {
+  // If typed name exactly matches an employee, auto-confirm
+  const val = (document.getElementById('inv-employee').value||'').trim();
+  if (!invEmpConfirmed && val) {
+    const exact = invEmpList.find(e => e.name.toLowerCase() === val.toLowerCase());
+    if (exact) {
+      invEmpSelect(exact.name, exact.department||'', exact.designation||'');
+      return;
+    }
+  }
+  document.getElementById('inv-emp-dropdown').style.display = 'none';
+}
+
 async function invFilter() {
   const q = document.getElementById('inv-search').value.toLowerCase();
   const items = (await DB.getInventory(invCurrentLocation)).filter(i =>
@@ -375,7 +463,13 @@ function invModal() {
       <div class="modal-header"><div class="modal-title" id="inv-modal-title">Add Device</div><button class="btn-close" onclick="invCloseModal()">×</button></div>
       <div class="modal-body"><div class="form-grid">
         <div class="form-section-label">Basic Information</div>
-        <div class="form-group"><label>Employee Name</label><input id="inv-employee" type="text" placeholder="Full name"/></div>
+        <div class="form-group span2" style="position:relative;">
+          <label>Employee Name</label>
+          <input id="inv-employee" type="text" placeholder="Start typing a name..." autocomplete="off"
+            oninput="invEmpSearch(this.value)" onblur="setTimeout(invEmpHideDropdown,200)"/>
+          <div id="inv-emp-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+          <div id="inv-emp-confirm" style="display:none;margin-top:8px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);border-radius:8px;padding:10px 14px;font-size:13px;"></div>
+        </div>
         <div class="form-group"><label>Device Type</label><select id="inv-type" onchange="invTogglePCFields()"><option value="Laptop">Laptop</option><option value="PC">PC (Desktop)</option></select></div>
         <div class="form-group"><label>Brand</label><input id="inv-brand" type="text" placeholder="Dell, HP, Lenovo..."/></div>
         <div class="form-group"><label>Model</label><input id="inv-model" type="text" placeholder="Model name"/></div>
@@ -428,6 +522,8 @@ function invToggleVga() { document.getElementById('inv-vga-fields').style.displa
 
 function invOpenAdd() {
   invEditId = null;
+  invEmpConfirmed = false;
+  invLoadEmpList();
   document.getElementById('inv-modal-title').textContent = 'Add Device';
   ['inv-employee','inv-brand','inv-model','inv-description','inv-serial','inv-ram','inv-storage-size','inv-ssd-serial','inv-extra-hdd-size','inv-extra-hdd-serial','inv-ups-brand','inv-ups-model','inv-ups-size','inv-keyboard','inv-monitor-brand','inv-monitor-model','inv-monitor-serial','inv-vga-model','inv-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   ['inv-extra-hdd','inv-mouse','inv-vga'].forEach(id => { const el=document.getElementById(id); if(el) el.checked=false; });
@@ -438,12 +534,14 @@ function invOpenAdd() {
 }
 
 async function invOpenEdit(id) {
+  await invLoadEmpList();
   const items = await DB.getInventory(invCurrentLocation);
   const item = items.find(i => i.id === id);
   if (!item) return;
   invEditId = id;
   document.getElementById('inv-modal-title').textContent = 'Edit Device';
   document.getElementById('inv-employee').value = item.employee||'';
+  if (item.employee) { const e = invEmpList.find(x=>x.name===item.employee); invEmpSelect(item.employee, e?e.department:'', e?e.designation:''); }
   document.getElementById('inv-type').value = item.deviceType||'Laptop';
   document.getElementById('inv-brand').value = item.brand||'';
   document.getElementById('inv-model').value = item.model||'';
@@ -477,6 +575,15 @@ function invCloseModal() { document.getElementById('inv-modal').style.display='n
 
 async function invSave() {
   const employee = document.getElementById('inv-employee').value.trim();
+  // Warn if employee not linked
+  if (!invEmpConfirmed && employee) {
+    const exact = invEmpList.find(e => e.name.toLowerCase() === employee.toLowerCase());
+    if (!exact) {
+      const top = invEmpList.map(e=>({e,s:invSimilarity(employee,e.name)})).sort((a,b)=>b.s-a.s)[0];
+      const hint = top && top.s > 0.3 ? `\nDid you mean: "${top.e.name}"?` : '';
+      if (!confirm(`"${employee}" was not found in the Employees list.${hint}\n\nSave anyway?`)) return;
+    }
+  }
   const deviceType = document.getElementById('inv-type').value;
   const brand = document.getElementById('inv-brand').value.trim();
   const model = document.getElementById('inv-model').value.trim();
