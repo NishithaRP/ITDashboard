@@ -1,13 +1,11 @@
 // ============================================================
-// MAIN APP CONTROLLER — Supabase version
+// MAIN APP CONTROLLER
 // ============================================================
 
 let currentLocation = LOCATIONS[0];
 let currentModule = MODULES[0].id;
 
-function appInit() {
-  renderApp();
-}
+function appInit() { renderApp(); }
 
 function renderApp() {
   const app = document.getElementById('main-app');
@@ -24,10 +22,10 @@ function renderApp() {
       </div>
     </div>
     <div class="location-tabs">
-      ${LOCATIONS.map(loc => `<div class="loc-tab ${loc === currentLocation ? 'active' : ''}" onclick="switchLocation('${loc}')">${loc}</div>`).join('')}
+      ${LOCATIONS.map(loc=>`<div class="loc-tab ${loc===currentLocation?'active':''}" onclick="switchLocation('${loc}')">${loc}</div>`).join('')}
     </div>
     <div class="module-nav">
-      ${MODULES.map(m => `<div class="mod-tab ${m.id === currentModule ? 'active' : ''}" onclick="switchModule('${m.id}')">${m.icon} ${m.label}</div>`).join('')}
+      ${MODULES.map(m=>`<div class="mod-tab ${m.id===currentModule?'active':''}" onclick="switchModule('${m.id}')">${m.icon} ${m.label}</div>`).join('')}
     </div>
     <div class="content-area" id="module-content"></div>
   `;
@@ -46,30 +44,21 @@ function renderCurrentModule() {
     case 'mobiles':   mobilesRender(currentLocation); break;
     case 'ip':        ipRender(currentLocation); break;
     case 'systems':   systemsRender(currentLocation); break;
+    case 'employees': employeesRender(currentLocation); break;
   }
 }
 
-function switchLocation(loc) {
-  currentLocation = loc;
-  renderApp();
-}
+function switchLocation(loc) { currentLocation=loc; renderApp(); }
 
 function switchModule(mod) {
-  currentModule = mod;
-  document.querySelectorAll('.mod-tab').forEach(t => {
-    t.classList.toggle('active', t.textContent.trim().includes(MODULES.find(m => m.id === mod).label));
-  });
-  document.querySelectorAll('.loc-tab').forEach(t => {
-    t.classList.toggle('active', t.textContent.trim() === currentLocation);
-  });
-  document.querySelector('.location-badge').textContent = currentLocation;
+  currentModule=mod;
+  document.querySelectorAll('.mod-tab').forEach(t=>t.classList.toggle('active',t.textContent.trim().includes(MODULES.find(m=>m.id===mod).label)));
+  document.querySelectorAll('.loc-tab').forEach(t=>t.classList.toggle('active',t.textContent.trim()===currentLocation));
+  document.querySelector('.location-badge').textContent=currentLocation;
   renderCurrentModule();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('app').innerHTML = `
-    ${renderLogin()}
-    <div id="main-app" style="display:none;"></div>
-  `;
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('app').innerHTML=`${renderLogin()}<div id="main-app" style="display:none;"></div>`;
   authInit();
 });
