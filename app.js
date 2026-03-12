@@ -25,7 +25,7 @@ function renderApp() {
       ${LOCATIONS.map(loc=>`<div class="loc-tab ${loc===currentLocation?'active':''}" onclick="switchLocation('${loc}')">${loc}</div>`).join('')}
     </div>
     <div class="module-nav">
-      ${MODULES.map(m=>`<div class="mod-tab ${m.id===currentModule?'active':''}" onclick="switchModule('${m.id}')">${m.icon} ${m.label}</div>`).join('')}
+      ${MODULES.map(m=>`<div class="mod-tab ${m.id===currentModule?'active':''}" data-module="${m.id}" onclick="switchModule('${m.id}')">${m.icon} ${m.label}</div>`).join('')}
     </div>
     <div class="content-area" id="module-content"></div>
   `;
@@ -52,7 +52,7 @@ function switchLocation(loc) { currentLocation=loc; renderApp(); }
 
 function switchModule(mod) {
   currentModule=mod;
-  document.querySelectorAll('.mod-tab').forEach(t=>t.classList.toggle('active',t.textContent.trim().includes(MODULES.find(m=>m.id===mod).label)));
+  document.querySelectorAll('.mod-tab').forEach(t=>t.classList.toggle('active',t.dataset.module===mod));
   document.querySelectorAll('.loc-tab').forEach(t=>t.classList.toggle('active',t.textContent.trim()===currentLocation));
   document.querySelector('.location-badge').textContent=currentLocation;
   renderCurrentModule();
