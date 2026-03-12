@@ -11,7 +11,8 @@ const MODULES = [
   { id: 'inventory', label: 'IT Inventory',      icon: '💻' },
   { id: 'printers',  label: 'Printers',           icon: '🖨️' },
   { id: 'mobiles',   label: 'Mobile Phones',      icon: '📱' },
-  { id: 'ip',        label: 'IP Manager',          icon: '🌐' }
+  { id: 'ip',        label: 'IP Manager',          icon: '🌐' },
+  { id: 'systems',   label: 'Systems Access',      icon: '🖥️' }
 ];
 
 // ---- Storage Helpers ----

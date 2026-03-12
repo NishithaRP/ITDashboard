@@ -51,6 +51,7 @@ function renderCurrentModule() {
     case 'printers':  el.innerHTML = printersRender(currentLocation); break;
     case 'mobiles':   el.innerHTML = mobilesRender(currentLocation); break;
     case 'ip':        el.innerHTML = ipRender(currentLocation); break;
+    case 'systems':   el.innerHTML = systemsRender(currentLocation); break;
   }
 }
 
