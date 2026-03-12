@@ -98,7 +98,15 @@ async function invImportExcel(input) {
     const data = await file.arrayBuffer();
     const workbook = XLSX.read(data, { type: 'arraybuffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    // Auto-detect header row — skip label rows until 'Employee Name' is found
+    let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    if (rows.length > 0) {
+      const firstKey = Object.keys(rows[0])[0] || '';
+      if (firstKey !== 'Employee Name' && firstKey !== 'Employee') {
+        // Header is on row 2 (template has a top label row)
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: '', range: 1 });
+      }
+    }
 
     if (rows.length === 0) {
       invImportDone(); toast('Excel file is empty', 'error'); input.value=''; return;
