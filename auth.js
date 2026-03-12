@@ -2,6 +2,8 @@
 // AUTH MODULE
 // ============================================================
 
+// Default users - change these passwords after first login
+// To add Supabase auth later, replace this with Supabase Auth
 const USERS = [
   { username: 'admin',   password: 'Polydime@2024', role: 'admin',    name: 'IT Admin' },
   { username: 'itexec',  password: 'IT@exec2024',   role: 'admin',    name: 'IT Executive' },
@@ -28,9 +30,8 @@ function showLogin() {
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
+  document.getElementById('user-display').textContent = currentUser.name;
   appInit();
-  const el = document.getElementById('user-display');
-  if (el) el.textContent = currentUser.name;
 }
 
 function doLogin() {
