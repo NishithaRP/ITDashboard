@@ -2147,25 +2147,39 @@ async function printerDelete(id) {
 </script>
 <script>
 // ============================================================
-// MOBILE PHONES MODULE — Supabase version
+// MOBILE PHONES MODULE — with Excel Import & Employee Matching
 // ============================================================
 let mobileCurrentLocation = '';
 let mobileEditId = null;
+let mobEmpList = [];
+let mobEmpConfirmed = false;
 
 async function mobilesRender(location) {
   mobileCurrentLocation = location;
   const el = document.getElementById('module-content');
   if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
   const mobiles = await DB.getMobiles(location);
-  if (el) el.innerHTML = mobilesHTML(location, mobiles) + mobileModal();
+  if (el) el.innerHTML = mobilesHTML(location, mobiles) + mobileModal() + mobImportOverlay();
 }
 
 function mobilesHTML(location, mobiles) {
   return `<div>
     <div class="section-header">
       <div><div class="section-title">📱 Mobile Phones</div><div class="section-subtitle">${location} — ${mobiles.length} device(s)</div></div>
-      <button class="btn btn-secondary" onclick="mobileOpenAdd()">+ Add Mobile</button>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <label class="btn btn-import" style="cursor:pointer;">
+          📥 Import Excel
+          <input type="file" id="mob-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="mobImportExcel(this)"/>
+        </label>
+        <button class="btn btn-secondary" onclick="mobileOpenAdd()">+ Add Mobile</button>
+      </div>
     </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">📋</span>
+      <span><strong style="color:var(--text);">Excel columns:</strong> Employee Name | Department | Brand | Model | Serial Number | IMEI | Mobile Number</span>
+    </div>
+
     <div class="bulk-bar" id="mob-bulk-bar">
       <span class="bulk-bar-count" id="mob-bulk-count">0 selected</span>
       <span class="bulk-bar-info">phones</span>
@@ -2173,15 +2187,21 @@ function mobilesHTML(location, mobiles) {
       <button class="btn-bulk-delete" onclick="mobBulkDelete()">🗑 Delete Selected</button>
     </div>
     <div class="card" style="padding:0;"><div class="table-wrap"><table>
-      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="mob-check-all" onchange="mobToggleAll(this)"/></th><th>Employee</th><th>Department</th><th>Brand / Model</th><th>Serial #</th><th>IMEI</th><th>Mobile Number</th><th>Actions</th></tr></thead>
-      <tbody>${mobiles.length===0?`<tr><td colspan="8"><div class="empty-state"><div class="icon">📱</div><h3>No mobile phones yet</h3></div></td></tr>`:
-        mobiles.map(m=>`<tr>
+      <thead><tr>
+        <th class="cb-col"><input type="checkbox" class="row-checkbox" id="mob-check-all" onchange="mobToggleAll(this)"/></th>
+        <th>Employee</th><th>Department</th><th>Brand / Model</th>
+        <th>Serial #</th><th>IMEI</th><th>Mobile Number</th><th>Actions</th>
+      </tr></thead>
+      <tbody>${mobiles.length===0
+        ? `<tr><td colspan="8"><div class="empty-state"><div class="icon">📱</div><h3>No mobile phones yet</h3></div></td></tr>`
+        : mobiles.map(m=>`<tr>
           <td class="cb-col"><input type="checkbox" class="row-checkbox mob-row-cb" data-id="${m.id}" onchange="mobRowCheck()"/></td>
-          <td><strong>${m.employee}</strong></td><td>${m.department}</td>
-          <td>${m.brand} ${m.model}</td>
-          <td style="font-family:monospace;font-size:12px;">${m.serialNumber}</td>
-          <td style="font-family:monospace;font-size:12px;">${m.imei}</td>
-          <td><span class="badge badge-blue">${m.mobileNumber}</span></td>
+          <td><strong>${m.employee}</strong></td>
+          <td>${m.department||'—'}</td>
+          <td>${m.brand||''} ${m.model||''}</td>
+          <td style="font-family:monospace;font-size:12px;">${m.serialNumber||'—'}</td>
+          <td style="font-family:monospace;font-size:12px;">${m.imei||'—'}</td>
+          <td><span class="badge badge-blue">${m.mobileNumber||'—'}</span></td>
           <td class="action-btns">
             <button class="btn btn-small btn-secondary" onclick="mobileOpenEdit('${m.id}')">Edit</button>
             <button class="btn btn-small btn-danger" onclick="mobileDelete('${m.id}')">Del</button>
@@ -2192,28 +2212,273 @@ function mobilesHTML(location, mobiles) {
   </div>`;
 }
 
-function mobileModal() {
-  return `<div id="mobile-modal" class="modal-overlay" style="display:none;">
-    <div class="modal">
-      <div class="modal-header"><div class="modal-title" id="mobile-modal-title">Add Mobile Phone</div><button class="btn-close" onclick="mobileCloseModal()">×</button></div>
-      <div class="modal-body"><div class="form-grid">
-        <div class="form-group"><label>Employee Name</label><input id="mob-employee" type="text"/></div>
-        <div class="form-group"><label>Department</label><input id="mob-dept" type="text"/></div>
-        <div class="form-group"><label>Brand</label><input id="mob-brand" type="text"/></div>
-        <div class="form-group"><label>Model</label><input id="mob-model" type="text"/></div>
-        <div class="form-group"><label>Serial Number</label><input id="mob-serial" type="text"/></div>
-        <div class="form-group"><label>IMEI Number</label><input id="mob-imei" type="text"/></div>
-        <div class="form-group span2"><label>Mobile Number</label><input id="mob-number" type="text" placeholder="+94 77 ..."/></div>
-      </div></div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="mobileCloseModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="mobileSave()" style="width:auto">Save</button>
+// ---- IMPORT OVERLAY ----
+function mobImportOverlay() {
+  return `<div id="mob-import-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:90%;max-width:600px;max-height:88vh;overflow-y:auto;text-align:center;">
+      <div style="font-size:36px;margin-bottom:12px;">📱</div>
+      <div id="mob-import-status" style="font-size:16px;font-weight:700;margin-bottom:14px;">Reading Excel file...</div>
+      <div style="background:var(--surface2);border-radius:8px;height:8px;margin-bottom:8px;overflow:hidden;">
+        <div id="mob-import-bar" style="height:100%;background:var(--accent);border-radius:8px;width:0%;transition:width 0.3s;"></div>
       </div>
+      <div id="mob-import-count" style="font-size:13px;color:var(--text2);margin-bottom:16px;"></div>
+      <div id="mob-import-warnings" style="text-align:left;margin-bottom:16px;max-height:300px;overflow-y:auto;"></div>
+      <div id="mob-import-confirm-area" style="display:none;flex-direction:column;align-items:center;gap:12px;">
+        <div id="mob-import-confirm-text" style="color:var(--text2);font-size:14px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="mobImportDone()" class="btn btn-secondary">Cancel</button>
+          <button id="mob-import-confirm-btn" onclick="mobConfirmImport()" class="btn btn-primary">✅ Import Valid Rows</button>
+        </div>
+      </div>
+      <button onclick="mobImportDone()" id="mob-import-close-btn" style="display:none;margin-top:8px;" class="btn btn-secondary">Close</button>
     </div>
   </div>`;
 }
 
+function mobImportDone() {
+  document.getElementById('mob-import-overlay').style.display = 'none';
+  document.getElementById('mob-import-bar').style.width = '0%';
+  document.getElementById('mob-import-count').textContent = '';
+  document.getElementById('mob-import-warnings').innerHTML = '';
+  document.getElementById('mob-import-confirm-area').style.display = 'none';
+  const cb = document.getElementById('mob-import-close-btn');
+  if (cb) cb.style.display = 'none';
+  const inp = document.getElementById('mob-excel-input');
+  if (inp) inp.value = '';
+}
 
+// ---- EXCEL IMPORT ----
+async function mobImportExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  document.getElementById('mob-import-overlay').style.display = 'flex';
+  document.getElementById('mob-import-status').textContent = 'Reading Excel file...';
+  document.getElementById('mob-import-bar').style.width = '5%';
+  document.getElementById('mob-import-count').textContent = '';
+  document.getElementById('mob-import-warnings').innerHTML = '';
+  document.getElementById('mob-import-confirm-area').style.display = 'none';
+
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'arraybuffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    // Auto-detect header row
+    if (rows.length > 0) {
+      const firstKey = Object.keys(rows[0])[0] || '';
+      if (firstKey !== 'Employee Name' && firstKey !== 'Employee') {
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: '', range: 1 });
+      }
+    }
+    if (rows.length === 0) { mobImportDone(); toast('Excel file is empty', 'error'); return; }
+
+    document.getElementById('mob-import-status').textContent = 'Loading employee list...';
+    document.getElementById('mob-import-bar').style.width = '20%';
+    const employees = await DB.getEmployees(mobileCurrentLocation);
+    const employeeNames = new Set(employees.map(e => e.name.trim().toLowerCase()));
+    const existing = await DB.getMobiles(mobileCurrentLocation);
+    const existingEmployees = new Set(existing.map(m => (m.employee||'').trim().toLowerCase()));
+
+    const mobVal = (row, ...keys) => { for (const k of keys) { const v = row[k]; if (v !== undefined && v !== null && String(v).trim()) return String(v).trim(); } return ''; };
+    const skipPhrases = ['write ', 'required', 'note', '📋'];
+
+    const warnings = [];
+    const toSave = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2;
+      const employeeName = mobVal(row, 'Employee Name', 'Employee', 'Name');
+
+      // Skip instruction rows
+      if (!employeeName || skipPhrases.some(p => employeeName.toLowerCase().includes(p))) continue;
+
+      // Skip blank employee rows
+      if (!employeeName) {
+        warnings.push({ row: rowNum, name: '(blank)', type: 'error', msgs: ['Employee Name is required — row skipped'] });
+        continue;
+      }
+
+      // Duplicate check
+      if (existingEmployees.has(employeeName.toLowerCase())) {
+        warnings.push({ row: rowNum, name: employeeName, type: 'skip', msgs: ['⏭️ Already has a mobile in this location — skipped'] });
+        continue;
+      }
+
+      const item = {
+        id: genId(),
+        employee: employeeName,
+        department: mobVal(row, 'Department', 'Dept'),
+        brand:      mobVal(row, 'Brand'),
+        model:      mobVal(row, 'Model'),
+        serialNumber: mobVal(row, 'Serial Number', 'Serial', 'Serial No'),
+        imei:       mobVal(row, 'IMEI', 'IMEI Number'),
+        mobileNumber: mobVal(row, 'Mobile Number', 'Mobile No', 'Phone Number', 'Number'),
+      };
+
+      toSave.push(item);
+      document.getElementById('mob-import-bar').style.width = Math.round(20 + (i/rows.length)*60) + '%';
+    }
+
+    // ---- RESOLVE UNMATCHED NAMES ----
+    const unmatchedNames = [...new Set(
+      toSave
+        .filter(item => employees.length > 0 && !employeeNames.has((item.employee||'').toLowerCase().trim()))
+        .map(item => item.employee)
+    )];
+
+    if (unmatchedNames.length > 0) {
+      window._mobPendingImport = toSave;
+      window._mobEmployeeList = employees;
+      window._mobUnmatched = unmatchedNames;
+      window._mobWarnings = warnings;
+      input.value = '';
+      mobShowNameResolver(unmatchedNames, employees, toSave.length);
+      return;
+    }
+
+    // Show warnings or save directly
+    if (warnings.length > 0) {
+      mobShowWarnings(warnings, toSave);
+      window._mobPendingImport = toSave;
+      input.value = '';
+      return;
+    }
+
+    await mobDoSave(toSave, input);
+
+  } catch(err) {
+    mobImportDone();
+    toast('Error reading file: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// ---- NAME RESOLVER ----
+function mobSimilarityScore(a, b) {
+  a = a.toLowerCase().trim(); b = b.toLowerCase().trim();
+  if (a === b) return 100;
+  const aW = a.split(' '); const bW = b.split(' ');
+  let score = 0;
+  for (const aw of aW) for (const bw of bW) {
+    if (aw === bw && aw.length > 2) score += 40;
+    else if (bw.includes(aw) && aw.length > 2) score += 20;
+    else if (aw.includes(bw) && bw.length > 2) score += 20;
+  }
+  return Math.min(score, 99);
+}
+
+function mobShowNameResolver(unmatchedNames, employees, totalValid) {
+  const resolverHTML = '<div style="width:100%;text-align:left;">'
+    + '<div style="font-size:20px;font-weight:700;margin-bottom:6px;">🔍 Match Employee Names</div>'
+    + '<div style="color:var(--text2);font-size:13px;margin-bottom:20px;">'
+    + unmatchedNames.length + ' name(s) from Excel weren\'t found in the Employees list. Select the correct match or keep as-is.</div>'
+    + unmatchedNames.map(function(name, idx) {
+        const suggestions = employees
+          .map(function(e) { return { e: e, score: mobSimilarityScore(name, e.name) }; })
+          .sort(function(a,b) { return b.score - a.score; })
+          .slice(0, 6);
+        const opts = suggestions.map(function(x) {
+          const star = x.score > 50 ? ' ⭐' : x.score > 25 ? ' 🔵' : '';
+          return '<option value="' + x.e.name + '">' + x.e.name + (x.e.department ? ' · ' + x.e.department : '') + star + '</option>';
+        }).join('');
+        return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">'
+          + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+          + '<div style="flex:1;min-width:100px;">'
+          + '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;">FROM EXCEL</div>'
+          + '<strong style="color:#f59e0b;">&quot;' + name + '&quot;</strong></div>'
+          + '<div style="font-size:18px;color:var(--text2);">→</div>'
+          + '<div style="flex:2;min-width:180px;">'
+          + '<div style="font-size:11px;color:var(--text2);margin-bottom:3px;">MATCH TO EMPLOYEE</div>'
+          + '<select id="mob-resolve-' + idx + '" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:13px;font-family:inherit;">'
+          + '<option value="__skip__">— Keep as &quot;' + name + '&quot; —</option>'
+          + opts
+          + '</select></div></div></div>';
+      }).join('')
+    + '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">'
+    + '<button onclick="mobCancelResolver()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-size:13px;">✕ Cancel</button>'
+    + '<button onclick="mobConfirmResolver()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;">✅ Confirm & Import ' + totalValid + ' Phone(s)</button>'
+    + '</div></div>';
+
+  document.getElementById('mob-import-status').innerHTML = resolverHTML;
+  document.getElementById('mob-import-bar').style.width = '0%';
+  document.getElementById('mob-import-count').textContent = '';
+}
+
+function mobCancelResolver() {
+  mobImportDone();
+  window._mobPendingImport = null;
+}
+
+async function mobConfirmResolver() {
+  const unmatched = window._mobUnmatched || [];
+  const nameMap = {};
+  unmatched.forEach(function(name, idx) {
+    const sel = document.getElementById('mob-resolve-' + idx);
+    if (sel && sel.value !== '__skip__') nameMap[name.toLowerCase().trim()] = sel.value;
+  });
+
+  const toSave = (window._mobPendingImport || []).map(function(item) {
+    const key = (item.employee||'').toLowerCase().trim();
+    if (nameMap[key]) return Object.assign({}, item, { employee: nameMap[key] });
+    return item;
+  });
+  window._mobPendingImport = toSave;
+  window._mobUnmatched = null;
+
+  const warnings = window._mobWarnings || [];
+  if (warnings.length > 0) {
+    mobShowWarnings(warnings, toSave);
+  } else {
+    await mobDoSave(toSave, null);
+  }
+}
+
+function mobShowWarnings(warnings, toSave) {
+  document.getElementById('mob-import-status').textContent = 'Found ' + warnings.length + ' issue(s). Review below then confirm.';
+  document.getElementById('mob-import-warnings').innerHTML = warnings.map(function(w) {
+    const icon = w.type === 'error' ? '❌' : w.type === 'skip' ? '⏭️' : '⚠️';
+    return '<div class="import-warn-row import-warn-' + w.type + '">'
+      + '<div class="import-warn-header"><span>' + icon + ' Row ' + w.row + ': <strong>' + w.name + '</strong></span></div>'
+      + w.msgs.map(function(m) { return '<div class="import-warn-msg">' + m + '</div>'; }).join('')
+      + '</div>';
+  }).join('');
+  document.getElementById('mob-import-confirm-area').style.display = 'flex';
+  document.getElementById('mob-import-confirm-text').textContent = toSave.length > 0
+    ? 'Proceed to import ' + toSave.length + ' phone(s)?'
+    : 'No valid rows to import.';
+  document.getElementById('mob-import-confirm-btn').style.display = toSave.length > 0 ? 'inline-block' : 'none';
+}
+
+async function mobConfirmImport() {
+  const toSave = window._mobPendingImport || [];
+  document.getElementById('mob-import-confirm-area').style.display = 'none';
+  document.getElementById('mob-import-warnings').innerHTML = '';
+  await mobDoSave(toSave, null);
+}
+
+async function mobDoSave(toSave, input) {
+  if (toSave.length === 0) { mobImportDone(); toast('Nothing to import', 'error'); return; }
+  document.getElementById('mob-import-status').textContent = 'Saving ' + toSave.length + ' phones...';
+  document.getElementById('mob-import-bar').style.width = '10%';
+  for (let i = 0; i < toSave.length; i++) {
+    await DB.saveMobile(mobileCurrentLocation, toSave[i]);
+    const pct = Math.round(((i+1)/toSave.length)*100);
+    document.getElementById('mob-import-bar').style.width = pct + '%';
+    document.getElementById('mob-import-count').textContent = (i+1) + ' / ' + toSave.length;
+    document.getElementById('mob-import-status').textContent = '✅ Saved: ' + toSave[i].employee;
+  }
+  document.getElementById('mob-import-status').textContent = '🎉 Import complete! ' + toSave.length + ' phone(s) imported.';
+  document.getElementById('mob-import-bar').style.width = '100%';
+  const cb = document.getElementById('mob-import-close-btn');
+  if (cb) cb.style.display = 'inline-block';
+  if (input) input.value = '';
+  window._mobPendingImport = null;
+  mobilesRender(mobileCurrentLocation);
+}
+
+// ---- BULK DELETE ----
 function mobRowCheck() {
   const cbs = document.querySelectorAll('.mob-row-cb');
   const checked = document.querySelectorAll('.mob-row-cb:checked');
@@ -2231,20 +2496,110 @@ function mobBulkCancel() {
 async function mobBulkDelete() {
   const ids = [...document.querySelectorAll('.mob-row-cb:checked')].map(c => c.dataset.id);
   if (!ids.length) return;
-  if (!confirm(`Delete ${ids.length} phone(s)?`)) return;
+  if (!confirm('Delete ' + ids.length + ' phone(s)?')) return;
   for (const id of ids) await DB.deleteMobile(id);
-  toast(`🗑 ${ids.length} phone(s) deleted`);
+  toast('🗑 ' + ids.length + ' phone(s) deleted');
   mobilesRender(mobileCurrentLocation);
+}
+
+// ---- MANUAL ADD / EDIT (with smart employee lookup) ----
+async function mobLoadEmpList() {
+  mobEmpList = await DB.getEmployees(mobileCurrentLocation);
+}
+
+function mobEmpSearch(query) {
+  mobEmpConfirmed = false;
+  document.getElementById('mob-emp-confirm').style.display = 'none';
+  const dd = document.getElementById('mob-emp-dropdown');
+  if (!query || query.length < 1) { dd.style.display = 'none'; return; }
+  const q = query.toLowerCase().trim();
+  const scored = mobEmpList
+    .map(e => ({ e, score: mobSimilarityScore(q, e.name) }))
+    .filter(x => x.score > 20)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 6);
+  if (!scored.length) { dd.innerHTML = '<div style="padding:10px 14px;color:var(--text2);font-size:13px;">No matching employees</div>'; dd.style.display='block'; return; }
+  dd.innerHTML = scored.map(({e, score}) => {
+    const tag = score === 100 ? '✅' : score >= 85 ? '🔵' : '🟡';
+    return '<div onclick="mobEmpSelect(\'' + e.name.replace(/'/g,"\\'") + '\',\'' + (e.department||'') + '\')" '
+      + 'style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;" '
+      + 'onmouseover="this.style.background=\'var(--surface3)\'" onmouseout="this.style.background=\'\'">'
+      + '<div><strong style="font-size:13px;">' + e.name + '</strong>'
+      + '<span style="color:var(--text2);font-size:12px;margin-left:8px;">' + (e.department||'') + '</span></div>'
+      + '<span style="font-size:11px;">' + tag + '</span></div>';
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function mobEmpSelect(name, dept) {
+  document.getElementById('mob-employee').value = name;
+  document.getElementById('mob-dept').value = dept || document.getElementById('mob-dept').value;
+  document.getElementById('mob-emp-dropdown').style.display = 'none';
+  mobEmpConfirmed = true;
+  const c = document.getElementById('mob-emp-confirm');
+  c.style.display = 'block';
+  c.innerHTML = '<span style="color:#38bdf8;">✅ Linked to <strong>' + name + '</strong>' + (dept ? ' · ' + dept : '') + '</span>'
+    + '<button onclick="mobEmpClear()" style="float:right;background:none;border:none;color:var(--text2);cursor:pointer;font-size:12px;">✕ Change</button>';
+}
+
+function mobEmpClear() {
+  document.getElementById('mob-employee').value = '';
+  document.getElementById('mob-dept').value = '';
+  document.getElementById('mob-emp-confirm').style.display = 'none';
+  document.getElementById('mob-emp-dropdown').style.display = 'none';
+  mobEmpConfirmed = false;
+  document.getElementById('mob-employee').focus();
+}
+
+function mobEmpHideDropdown() {
+  const val = (document.getElementById('mob-employee').value||'').trim();
+  if (!mobEmpConfirmed && val) {
+    const exact = mobEmpList.find(e => e.name.toLowerCase() === val.toLowerCase());
+    if (exact) { mobEmpSelect(exact.name, exact.department||''); return; }
+  }
+  document.getElementById('mob-emp-dropdown').style.display = 'none';
+}
+
+function mobileModal() {
+  return `<div id="mobile-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="mobile-modal-title">Add Mobile Phone</div><button class="btn-close" onclick="mobileCloseModal()">×</button></div>
+      <div class="modal-body"><div class="form-grid">
+        <div class="form-group span2" style="position:relative;">
+          <label>Employee Name</label>
+          <input id="mob-employee" type="text" placeholder="Start typing a name..." autocomplete="off"
+            oninput="mobEmpSearch(this.value)" onblur="setTimeout(mobEmpHideDropdown,200)"/>
+          <div id="mob-emp-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+          <div id="mob-emp-confirm" style="display:none;margin-top:8px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);border-radius:8px;padding:10px 14px;font-size:13px;"></div>
+        </div>
+        <div class="form-group span2"><label>Department</label><input id="mob-dept" type="text" placeholder="Auto-filled from employee"/></div>
+        <div class="form-group"><label>Brand</label><input id="mob-brand" type="text" placeholder="Samsung, Apple..."/></div>
+        <div class="form-group"><label>Model</label><input id="mob-model" type="text" placeholder="Galaxy S24, iPhone 15..."/></div>
+        <div class="form-group"><label>Serial Number</label><input id="mob-serial" type="text"/></div>
+        <div class="form-group"><label>IMEI Number</label><input id="mob-imei" type="text"/></div>
+        <div class="form-group span2"><label>Mobile Number</label><input id="mob-number" type="text" placeholder="+94 77 ..."/></div>
+      </div></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="mobileCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="mobileSave()" style="width:auto">Save</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function mobileOpenAdd() {
   mobileEditId = null;
+  mobEmpConfirmed = false;
+  mobLoadEmpList();
   document.getElementById('mobile-modal-title').textContent = 'Add Mobile Phone';
   ['mob-employee','mob-dept','mob-brand','mob-model','mob-serial','mob-imei','mob-number'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('mob-emp-confirm').style.display = 'none';
+  document.getElementById('mob-emp-dropdown').style.display = 'none';
   document.getElementById('mobile-modal').style.display='flex';
 }
 
 async function mobileOpenEdit(id) {
+  await mobLoadEmpList();
   const mobiles = await DB.getMobiles(mobileCurrentLocation);
   const m = mobiles.find(x => x.id === id);
   if (!m) return;
@@ -2257,6 +2612,10 @@ async function mobileOpenEdit(id) {
   document.getElementById('mob-serial').value = m.serialNumber||'';
   document.getElementById('mob-imei').value = m.imei||'';
   document.getElementById('mob-number').value = m.mobileNumber||'';
+  if (m.employee) {
+    const e = mobEmpList.find(x => x.name === m.employee);
+    mobEmpSelect(m.employee, e ? e.department : m.department||'');
+  }
   document.getElementById('mobile-modal').style.display='flex';
 }
 
@@ -2265,7 +2624,16 @@ function mobileCloseModal() { document.getElementById('mobile-modal').style.disp
 async function mobileSave() {
   const employee = document.getElementById('mob-employee').value.trim();
   if (!employee) { toast('Employee name is required','error'); return; }
-  const item = { id: mobileEditId||genId(), employee, department: document.getElementById('mob-dept').value.trim(), brand: document.getElementById('mob-brand').value.trim(), model: document.getElementById('mob-model').value.trim(), serialNumber: document.getElementById('mob-serial').value.trim(), imei: document.getElementById('mob-imei').value.trim(), mobileNumber: document.getElementById('mob-number').value.trim() };
+  const item = {
+    id: mobileEditId||genId(),
+    employee,
+    department: document.getElementById('mob-dept').value.trim(),
+    brand: document.getElementById('mob-brand').value.trim(),
+    model: document.getElementById('mob-model').value.trim(),
+    serialNumber: document.getElementById('mob-serial').value.trim(),
+    imei: document.getElementById('mob-imei').value.trim(),
+    mobileNumber: document.getElementById('mob-number').value.trim()
+  };
   toast('Saving...'); await DB.saveMobile(mobileCurrentLocation, item);
   mobileCloseModal(); toast('Mobile phone saved!'); mobilesRender(mobileCurrentLocation);
 }
