@@ -5,21 +5,3070 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Polydime IT</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css"/>
+  <style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2330;
+  --border: #30363d;
+  --accent: #00d4aa;
+  --accent2: #0096ff;
+  --danger: #f85149;
+  --warning: #e3b341;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #484f58;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+/* ===== LOGIN ===== */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 30% 50%, #0a2a20 0%, #0d1117 60%);
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 0 60px rgba(0,212,170,0.08);
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-logo .company {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.login-logo h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.login-logo .subtitle {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+}
+
+.form-group select option { background: var(--surface); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #0d1117;
+  width: 100%;
+  justify-content: center;
+  padding: 12px;
+}
+
+.btn-primary:hover { background: #00f0c0; transform: translateY(-1px); }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-danger {
+  background: rgba(248,81,73,0.15);
+  color: var(--danger);
+  border: 1px solid rgba(248,81,73,0.3);
+}
+
+.btn-danger:hover { background: rgba(248,81,73,0.25); }
+
+.btn-small { padding: 6px 12px; font-size: 12px; }
+
+.login-error {
+  background: rgba(248,81,73,0.12);
+  border: 1px solid rgba(248,81,73,0.3);
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+/* ===== MAIN APP ===== */
+#main-app { display: none; min-height: 100vh; }
+
+/* Header */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-brand {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+}
+
+.location-badge {
+  background: rgba(0,212,170,0.1);
+  border: 1px solid rgba(0,212,170,0.3);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+.user-info { font-size: 13px; color: var(--text2); }
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Location Tabs */
+.location-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.location-tabs::-webkit-scrollbar { height: 2px; }
+.location-tabs::-webkit-scrollbar-thumb { background: var(--border); }
+
+.loc-tab {
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  border-radius: 6px 6px 0 0;
+}
+
+.loc-tab:hover { color: var(--text); background: var(--surface2); }
+
+.loc-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: rgba(0,212,170,0.05);
+}
+
+/* Module Tabs */
+.module-nav {
+  background: var(--bg);
+  padding: 16px 24px 0;
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mod-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mod-tab:hover { color: var(--text); background: var(--surface); }
+
+.mod-tab.active {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+  border-bottom-color: var(--surface);
+  position: relative;
+  bottom: -1px;
+}
+
+/* Content Area */
+.content-area {
+  padding: 24px;
+  max-width: 1400px;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+/* Cards & Tables */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+tbody tr:hover { background: var(--surface2); }
+
+tbody td {
+  padding: 10px 14px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-green { background: rgba(0,212,170,0.15); color: var(--accent); }
+.badge-blue { background: rgba(0,150,255,0.15); color: var(--accent2); }
+.badge-yellow { background: rgba(227,179,65,0.15); color: var(--warning); }
+.badge-red { background: rgba(248,81,73,0.15); color: var(--danger); }
+.badge-gray { background: rgba(139,148,158,0.15); color: var(--text2); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.modal-title { font-size: 16px; font-weight: 700; }
+
+.modal-body { padding: 24px; }
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px;
+}
+
+.btn-close:hover { color: var(--text); }
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-grid .span2 { grid-column: span 2; }
+.form-grid .span3 { grid-column: span 3; }
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .span2 { grid-column: span 1; }
+}
+
+/* WiFi specific */
+.wifi-connection-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.wifi-connection-header {
+  background: var(--surface2);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.wifi-conn-name { font-weight: 700; font-size: 15px; }
+.wifi-conn-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+.wifi-months-table { width: 100%; }
+
+.add-month-row {
+  background: rgba(0,212,170,0.03);
+  border-top: 1px dashed var(--border);
+}
+
+/* Stats row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; }
+.stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--accent); }
+.stat-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* Checkbox groups */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.checkbox-group label {
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+/* Conditional fields */
+.conditional-section {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.conditional-section .section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text2);
+}
+
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+.empty-state p { font-size: 13px; }
+
+/* Search */
+.search-bar {
+  position: relative;
+  max-width: 300px;
+}
+
+.search-bar input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px 8px 36px;
+  color: var(--text);
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.search-bar input:focus { border-color: var(--accent); }
+
+.search-bar .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 14px;
+}
+
+/* Notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--shadow);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.form-section-divider {
+  grid-column: 1 / -1;
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 6px 0;
+}
+
+.form-section-label {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding-top: 4px;
+}
+
+/* Action buttons in table */
+.action-btns { display: flex; gap: 6px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ---- EMPLOYEE MODULE ---- */
+.btn-import {
+  background: linear-gradient(135deg, var(--accent2), #7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+}
+.btn-import:hover { opacity: 0.85; }
+
+.dept-pill {
+  display: inline-block;
+  background: var(--surface3);
+  color: var(--text);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.filter-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+/* ---- EMPLOYEE STATUS BADGES ---- */
+.status-badge {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.status-badge:hover { opacity: 0.8; transform: scale(0.97); }
+.status-employed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.status-resigned {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ---- INVENTORY IMPORT WARNINGS ---- */
+.import-warn-row {
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-left: 4px solid;
+  font-size: 13px;
+}
+.import-warn-error {
+  background: rgba(239,68,68,0.08);
+  border-color: #ef4444;
+}
+.import-warn-warning {
+  background: rgba(245,158,11,0.08);
+  border-color: #f59e0b;
+}
+.import-warn-skip {
+  background: rgba(100,116,139,0.08);
+  border-color: #64748b;
+}
+.import-warn-header {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.import-warn-msg {
+  color: var(--text2);
+  font-size: 12px;
+  padding-left: 8px;
+  margin-top: 2px;
+}
+
+/* ---- BULK DELETE ---- */
+.bulk-bar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.bulk-bar.visible { display: flex; }
+.bulk-bar-count { font-weight: 700; color: #ef4444; font-size: 14px; }
+.bulk-bar-info  { color: var(--text2); font-size: 13px; }
+.btn-bulk-delete {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: auto;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+.btn-bulk-delete:hover { opacity: 0.85; }
+.btn-bulk-cancel {
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+.btn-bulk-cancel:hover { opacity: 0.8; }
+.row-checkbox {
+  width: 16px; height: 16px;
+  accent-color: #ef4444;
+  cursor: pointer;
+}
+th.cb-col, td.cb-col { width: 36px; padding: 0 8px; text-align: center; }
+
+</style>
   <!-- SheetJS for Excel import -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
 </head>
 <body>
   <div id="app"></div>
-  <script src="data.js"></script>
-  <script src="auth.js"></script>
-  <script src="modules/wifi.js"></script>
-  <script src="modules/inventory.js"></script>
-  <script src="modules/printers.js"></script>
-  <script src="modules/mobiles.js"></script>
-  <script src="modules/ipmanager.js"></script>
-  <script src="modules/systems.js"></script>
-  <script src="modules/employees.js"></script>
-  <script src="app.js"></script>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ============================================================
+// DATA LAYER — Supabase Backend
+// ============================================================
+
+const SUPABASE_URL = 'https://fgobjyvfqloebeyvdlmw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb2JqeXZmcWxvZWJleXZkbG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzMxOTAsImV4cCI6MjA4ODYwOTE5MH0.WnYV2ixA4ekrXOPk8Uqrt57KS76DNhcRNMG3q_Q08PY';
+
+const LOCATIONS = ['Head Office','Ambathale','Keragala','Wattala','Kadana','India','Indonesia'];
+
+const MODULES = [
+  { id:'wifi',      label:'WiFi Connections', icon:'📶' },
+  { id:'inventory', label:'IT Inventory',     icon:'💻' },
+  { id:'printers',  label:'Printers',          icon:'🖨️' },
+  { id:'mobiles',   label:'Mobile Phones',     icon:'📱' },
+  { id:'ip',        label:'IP Manager',         icon:'🌐' },
+  { id:'systems',   label:'Systems Access',    icon:'🖥️' },
+  { id:'employees', label:'Employees',          icon:'👥' }
+];
+
+async function sbFetch(path, options={}) {
+  const url = `${SUPABASE_URL}/rest/v1/${path}`;
+  const headers = { 'apikey':SUPABASE_ANON_KEY, 'Authorization':`Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type':'application/json', 'Prefer':'return=representation', ...options.headers };
+  const res = await fetch(url, {...options, headers});
+  if (!res.ok) { console.error('Supabase error:', await res.text()); return null; }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+const DB = {
+  // WIFI
+  async getWifi(location) {
+    const conns = await sbFetch(`wifi_connections?location=eq.${encodeURIComponent(location)}&order=created_at.asc`);
+    if (!conns) return [];
+    for (const c of conns) {
+      const months = await sbFetch(`wifi_months?connection_id=eq.${c.id}&order=month.desc`);
+      c.months = (months||[]).map(m=>({id:m.id,month:m.month,gbAmount:m.gb_amount,price:m.price,extraGb:m.extra_gb,extraCost:m.extra_cost,notes:m.notes}));
+      c.accountNumber=c.account_number; c.subscriptionNumber=c.subscription_number;
+      c.defaultGb=c.default_gb; c.defaultPrice=c.default_price;
+    }
+    return conns;
+  },
+  async saveWifiConnection(location,conn) {
+    await sbFetch('wifi_connections',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:conn.id,location,name:conn.name,account_number:conn.accountNumber,subscription_number:conn.subscriptionNumber,default_gb:conn.defaultGb,default_price:conn.defaultPrice})});
+  },
+  async deleteWifiConnection(id) { await sbFetch(`wifi_connections?id=eq.${id}`,{method:'DELETE'}); },
+  async saveWifiMonth(connId,location,m) {
+    await sbFetch('wifi_months',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:m.id,connection_id:connId,location,month:m.month,gb_amount:m.gbAmount,price:m.price,extra_gb:m.extraGb,extra_cost:m.extraCost,notes:m.notes})});
+  },
+  async deleteWifiMonth(id) { await sbFetch(`wifi_months?id=eq.${id}`,{method:'DELETE'}); },
+
+  // INVENTORY
+  async getInventory(location) {
+    const rows = await sbFetch(`inventory?location=eq.${encodeURIComponent(location)}&order=created_at.asc`);
+    return (rows||[]).map(r=>({id:r.id,employee:r.employee,deviceType:r.device_type,brand:r.brand,model:r.model,description:r.description,serialNumber:r.serial_number,ram:r.ram,storageType:r.storage_type,storageSize:r.storage_size,ssdSerial:r.ssd_serial,extraHdd:r.extra_hdd,extraHddSize:r.extra_hdd_size,extraHddSerial:r.extra_hdd_serial,mouseGiven:r.mouse_given,upsBrand:r.ups_brand,upsModel:r.ups_model,upsSize:r.ups_size,keyboard:r.keyboard,monitorBrand:r.monitor_brand,monitorModel:r.monitor_model,monitorSerial:r.monitor_serial,vgaAdded:r.vga_added,vgaModel:r.vga_model,notes:r.notes}));
+  },
+  async saveInventoryItem(location,item) {
+    await sbFetch('inventory',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:item.id,location,employee:item.employee,device_type:item.deviceType,brand:item.brand,model:item.model,description:item.description,serial_number:item.serialNumber,ram:item.ram,storage_type:item.storageType,storage_size:item.storageSize,ssd_serial:item.ssdSerial,extra_hdd:item.extraHdd,extra_hdd_size:item.extraHddSize,extra_hdd_serial:item.extraHddSerial,mouse_given:item.mouseGiven,ups_brand:item.upsBrand,ups_model:item.upsModel,ups_size:item.upsSize,keyboard:item.keyboard,monitor_brand:item.monitorBrand,monitor_model:item.monitorModel,monitor_serial:item.monitorSerial,vga_added:item.vgaAdded,vga_model:item.vgaModel,notes:item.notes})});
+  },
+  async deleteInventoryItem(id) { await sbFetch(`inventory?id=eq.${id}`,{method:'DELETE'}); },
+
+  // PRINTERS
+  async getPrinters(location) {
+    const rows = await sbFetch(`printers?location=eq.${encodeURIComponent(location)}&order=created_at.asc`);
+    return (rows||[]).map(r=>({id:r.id,brand:r.brand,model:r.model,serialNumber:r.serial_number,department:r.department,color:r.color,duplex:r.duplex,network:r.network,ipAddress:r.ip_address}));
+  },
+  async savePrinter(location,item) {
+    await sbFetch('printers',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:item.id,location,brand:item.brand,model:item.model,serial_number:item.serialNumber,department:item.department,color:item.color,duplex:item.duplex,network:item.network,ip_address:item.ipAddress})});
+  },
+  async deletePrinter(id) { await sbFetch(`printers?id=eq.${id}`,{method:'DELETE'}); },
+
+  // MOBILES
+  async getMobiles(location) {
+    const rows = await sbFetch(`mobiles?location=eq.${encodeURIComponent(location)}&order=created_at.asc`);
+    return (rows||[]).map(r=>({id:r.id,employee:r.employee,department:r.department,brand:r.brand,model:r.model,serialNumber:r.serial_number,imei:r.imei,mobileNumber:r.mobile_number}));
+  },
+  async saveMobile(location,item) {
+    await sbFetch('mobiles',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:item.id,location,employee:item.employee,department:item.department,brand:item.brand,model:item.model,serial_number:item.serialNumber,imei:item.imei,mobile_number:item.mobileNumber})});
+  },
+  async deleteMobile(id) { await sbFetch(`mobiles?id=eq.${id}`,{method:'DELETE'}); },
+
+  // IP MANAGER
+  async getIPs(location) {
+    const rows = await sbFetch(`ip_assignments?location=eq.${encodeURIComponent(location)}&order=ip_address.asc`);
+    return (rows||[]).map(r=>({id:r.id,ipAddress:r.ip_address,employee:r.employee,device:r.device,mac:r.mac,department:r.department,notes:r.notes}));
+  },
+  async saveIP(location,item) {
+    await sbFetch('ip_assignments',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:item.id,location,ip_address:item.ipAddress,employee:item.employee,device:item.device,mac:item.mac,department:item.department,notes:item.notes})});
+  },
+  async deleteIP(id) { await sbFetch(`ip_assignments?id=eq.${id}`,{method:'DELETE'}); },
+
+  // SYSTEMS - RDP
+  async getRDP(location) {
+    const rows = await sbFetch(`rdp_accounts?location=eq.${encodeURIComponent(location)}&order=created_at.asc`);
+    return (rows||[]).map(r=>({id:r.id,label:r.label,computerName:r.computer_name,ipAddress:r.ip_address,port:r.port,username:r.username,password:r.password,notes:r.notes}));
+  },
+  async saveRDP(location,item) {
+    await sbFetch('rdp_accounts',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:item.id,location,label:item.label,computer_name:item.computerName,ip_address:item.ipAddress,port:item.port,username:item.username,password:item.password,notes:item.notes})});
+  },
+  async deleteRDP(id) { await sbFetch(`rdp_accounts?id=eq.${id}`,{method:'DELETE'}); },
+
+  // SYSTEMS - ERP
+  async getERP(location) {
+    const rows = await sbFetch(`erp_accounts?location=eq.${encodeURIComponent(location)}&order=created_at.asc`);
+    return (rows||[]).map(r=>({id:r.id,employee:r.employee,department:r.department,erpSystem:r.erp_system,accessLevel:r.access_level,username:r.username,password:r.password,notes:r.notes}));
+  },
+  async saveERP(location,item) {
+    await sbFetch('erp_accounts',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:item.id,location,employee:item.employee,department:item.department,erp_system:item.erpSystem,access_level:item.accessLevel,username:item.username,password:item.password,notes:item.notes})});
+  },
+  async deleteERP(id) { await sbFetch(`erp_accounts?id=eq.${id}`,{method:'DELETE'}); },
+
+  // EMPLOYEES
+  async getEmployees(location) {
+    const rows = await sbFetch(`employees?location=eq.${encodeURIComponent(location)}&order=name.asc`);
+    return (rows||[]).map(r=>({id:r.id,name:r.name,location:r.location,department:r.department,designation:r.designation,status:r.status||'employed'}));
+  },
+  async saveEmployee(location,emp) {
+    await sbFetch('employees',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:emp.id,location,name:emp.name,department:emp.department,designation:emp.designation,status:emp.status||'employed'})});
+  },
+  async deleteEmployee(id) { await sbFetch(`employees?id=eq.${id}`,{method:'DELETE'}); }
+};
+
+function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function currentMonthLabel() {
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function formatMonth(ym) {
+  if(!ym) return '';
+  const [y,m]=ym.split('-');
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m)-1]} ${y}`;
+}
+
+function toast(msg,type='success') {
+  const el=document.createElement('div');
+  el.className='toast';
+  el.style.borderColor=type==='error'?'var(--danger)':'var(--accent)';
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+</script>
+<script>
+// ============================================================
+// AUTH MODULE
+// ============================================================
+
+// Default users - change these passwords after first login
+// To add Supabase auth later, replace this with Supabase Auth
+const USERS = [
+  { username: 'admin',   password: 'Polydime@2024', role: 'admin',    name: 'IT Admin' },
+  { username: 'itexec',  password: 'IT@exec2024',   role: 'admin',    name: 'IT Executive' },
+  { username: 'viewer',  password: 'View@2024',     role: 'viewer',   name: 'Viewer' }
+];
+
+let currentUser = null;
+
+function authInit() {
+  const saved = sessionStorage.getItem('polydime_user');
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    showApp();
+  } else {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('user-display').textContent = currentUser.name;
+  appInit();
+}
+
+function doLogin() {
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const user = USERS.find(x => x.username === u && x.password === p);
+  if (user) {
+    currentUser = user;
+    sessionStorage.setItem('polydime_user', JSON.stringify(user));
+    errEl.style.display = 'none';
+    showApp();
+  } else {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Invalid username or password.';
+    document.getElementById('login-password').value = '';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('polydime_user');
+  currentUser = null;
+  showLogin();
+}
+
+function renderLogin() {
+  return `
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="company">Polydime Plastics International</div>
+        <h1>Polydime IT</h1>
+        <div class="subtitle">Sign in to your account</div>
+      </div>
+      <div id="login-error" class="login-error"></div>
+      <div class="form-group">
+        <label>Username</label>
+        <input id="login-username" type="text" placeholder="Enter username" autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="Enter password" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter') doLogin()"/>
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    </div>
+  </div>`;
+}
+
+</script>
+<script>
+// ============================================================
+// WIFI MODULE — Supabase version
+// ============================================================
+
+let wifiEditId = null;
+let wifiCurrentLocation = '';
+
+async function wifiRender(location) {
+  wifiCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const connections = await DB.getWifi(location);
+  if (el) el.innerHTML = wifiHTML(location, connections) + wifiModal();
+}
+
+function wifiHTML(location, connections) {
+  return `<div>
+    <div class="section-header">
+      <div><div class="section-title">📶 WiFi Connections</div>
+      <div class="section-subtitle">${location} — ${connections.length} connection(s)</div></div>
+      <button class="btn btn-secondary" onclick="wifiOpenAdd()">+ Add Connection</button>
+    </div>
+    ${connections.length === 0 ? `<div class="empty-state"><div class="icon">📶</div><h3>No connections yet</h3><p>Add a WiFi connection to get started</p></div>` :
+      connections.map(c => wifiConnectionCard(c)).join('')}
+  </div>`;
+}
+
+function wifiConnectionCard(conn) {
+  const months = (conn.months || []).slice().sort((a,b) => b.month.localeCompare(a.month));
+  const latest = months[0];
+  return `
+  <div class="wifi-connection-card card" style="padding:0;margin-bottom:16px;">
+    <div class="wifi-connection-header">
+      <div>
+        <div class="wifi-conn-name">${conn.name}</div>
+        <div class="wifi-conn-meta">Acc# ${conn.accountNumber} &nbsp;|&nbsp; ${conn.subscriptionNumber} &nbsp;|&nbsp;
+          ${latest ? `<span class="badge badge-green">${latest.gbAmount} GB</span> &nbsp; LKR ${parseFloat(latest.price).toLocaleString()}` : 'No monthly data'}</div>
+      </div>
+      <div class="action-btns">
+        <button class="btn btn-small btn-secondary" onclick="wifiAddMonth('${conn.id}')">+ Month</button>
+        <button class="btn btn-small btn-secondary" onclick="wifiOpenEdit('${conn.id}')">Edit</button>
+        <button class="btn btn-small btn-danger" onclick="wifiDelete('${conn.id}')">Del</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="wifi-months-table">
+        <thead><tr><th>Month</th><th>GB Package</th><th>Base Price</th><th>Extra GB</th><th>Extra Cost</th><th>Total</th><th>Notes</th><th></th></tr></thead>
+        <tbody>
+          ${months.length === 0 ? `<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:16px;">No monthly records</td></tr>` :
+            months.map(m => `<tr>
+              <td><strong>${formatMonth(m.month)}</strong></td>
+              <td><span class="badge badge-blue">${m.gbAmount} GB</span></td>
+              <td>LKR ${parseFloat(m.price).toLocaleString()}</td>
+              <td>${m.extraGb ? m.extraGb+' GB' : '—'}</td>
+              <td>${m.extraCost ? 'LKR '+parseFloat(m.extraCost).toLocaleString() : '—'}</td>
+              <td><strong>LKR ${(parseFloat(m.price)+parseFloat(m.extraCost||0)).toLocaleString()}</strong></td>
+              <td style="color:var(--text2);font-size:12px;">${m.notes||'—'}</td>
+              <td><button class="btn btn-small btn-danger" onclick="wifiDeleteMonth('${conn.id}','${m.id}')">×</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function wifiModal() {
+  return `
+  <div id="wifi-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="wifi-modal-title">Add Connection</div><button class="btn-close" onclick="wifiCloseModal()">×</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Connection Name</label><input id="wf-name" type="text" placeholder="e.g. Dialog Fiber Office"/></div>
+          <div class="form-group"><label>Account Number</label><input id="wf-acc" type="text" placeholder="Account #"/></div>
+          <div class="form-group"><label>Subscription Number</label><input id="wf-sub" type="text" placeholder="Subscription #"/></div>
+          <div class="form-group"><label>Default GB Package</label><input id="wf-gb" type="number" placeholder="e.g. 100"/></div>
+          <div class="form-group span2"><label>Fixed Monthly Price (LKR)</label><input id="wf-price" type="number" placeholder="e.g. 4500"/></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="wifiCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="wifiSave()" style="width:auto">Save Connection</button>
+      </div>
+    </div>
+  </div>
+  <div id="wifi-month-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">Add Monthly Record</div><button class="btn-close" onclick="document.getElementById('wifi-month-modal').style.display='none'">×</button></div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Base GB and price are auto-filled. Edit if package changed this month.</p>
+        <input type="hidden" id="wm-conn-id"/>
+        <div class="form-grid">
+          <div class="form-group"><label>Month</label><input id="wm-month" type="month"/></div>
+          <div class="form-group"><label>GB Package</label><input id="wm-gb" type="number"/></div>
+          <div class="form-group"><label>Base Price (LKR)</label><input id="wm-price" type="number"/></div>
+          <div class="form-group"><label>Extra GB Added</label><input id="wm-extra-gb" type="number" placeholder="0"/></div>
+          <div class="form-group"><label>Extra Cost (LKR)</label><input id="wm-extra-cost" type="number" placeholder="0"/></div>
+          <div class="form-group span2"><label>Notes</label><input id="wm-notes" type="text" placeholder="Package upgrade, extra top-up..."/></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('wifi-month-modal').style.display='none'">Cancel</button>
+        <button class="btn btn-primary" onclick="wifiSaveMonth()" style="width:auto">Save Month</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Store connections in memory for edit lookups
+let _wifiConnCache = [];
+
+async function wifiOpenAdd() {
+  wifiEditId = null;
+  document.getElementById('wifi-modal-title').textContent = 'Add Connection';
+  ['wf-name','wf-acc','wf-sub','wf-gb','wf-price'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('wifi-modal').style.display = 'flex';
+}
+
+async function wifiOpenEdit(id) {
+  const connections = await DB.getWifi(wifiCurrentLocation);
+  const conn = connections.find(c => c.id === id);
+  if (!conn) return;
+  wifiEditId = id;
+  document.getElementById('wifi-modal-title').textContent = 'Edit Connection';
+  document.getElementById('wf-name').value = conn.name;
+  document.getElementById('wf-acc').value = conn.accountNumber;
+  document.getElementById('wf-sub').value = conn.subscriptionNumber;
+  document.getElementById('wf-gb').value = conn.defaultGb;
+  document.getElementById('wf-price').value = conn.defaultPrice;
+  document.getElementById('wifi-modal').style.display = 'flex';
+}
+
+function wifiCloseModal() { document.getElementById('wifi-modal').style.display = 'none'; }
+
+async function wifiSave() {
+  const name = document.getElementById('wf-name').value.trim();
+  if (!name) { toast('Connection name is required', 'error'); return; }
+  const conn = {
+    id: wifiEditId || genId(),
+    name, accountNumber: document.getElementById('wf-acc').value.trim(),
+    subscriptionNumber: document.getElementById('wf-sub').value.trim(),
+    defaultGb: document.getElementById('wf-gb').value,
+    defaultPrice: document.getElementById('wf-price').value
+  };
+  toast('Saving...');
+  await DB.saveWifiConnection(wifiCurrentLocation, conn);
+  wifiCloseModal();
+  toast('Connection saved!');
+  wifiRender(wifiCurrentLocation);
+}
+
+async function wifiDelete(id) {
+  if (!confirm('Delete this connection and all its monthly records?')) return;
+  await DB.deleteWifiConnection(id);
+  toast('Connection deleted');
+  wifiRender(wifiCurrentLocation);
+}
+
+async function wifiAddMonth(connId) {
+  const connections = await DB.getWifi(wifiCurrentLocation);
+  const conn = connections.find(c => c.id === connId);
+  if (!conn) return;
+  document.getElementById('wm-conn-id').value = connId;
+  document.getElementById('wm-month').value = currentMonthLabel();
+  document.getElementById('wm-gb').value = conn.defaultGb;
+  document.getElementById('wm-price').value = conn.defaultPrice;
+  document.getElementById('wm-extra-gb').value = '';
+  document.getElementById('wm-extra-cost').value = '';
+  document.getElementById('wm-notes').value = '';
+  document.getElementById('wifi-month-modal').style.display = 'flex';
+}
+
+async function wifiSaveMonth() {
+  const connId = document.getElementById('wm-conn-id').value;
+  const month = document.getElementById('wm-month').value;
+  if (!month) { toast('Select a month', 'error'); return; }
+  const record = {
+    id: genId(), month,
+    gbAmount: document.getElementById('wm-gb').value,
+    price: document.getElementById('wm-price').value,
+    extraGb: document.getElementById('wm-extra-gb').value,
+    extraCost: document.getElementById('wm-extra-cost').value,
+    notes: document.getElementById('wm-notes').value.trim()
+  };
+  toast('Saving...');
+  await DB.saveWifiMonth(connId, wifiCurrentLocation, record);
+  document.getElementById('wifi-month-modal').style.display = 'none';
+  toast('Monthly record saved!');
+  wifiRender(wifiCurrentLocation);
+}
+
+async function wifiDeleteMonth(connId, monthId) {
+  await DB.deleteWifiMonth(monthId);
+  toast('Month deleted');
+  wifiRender(wifiCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
+// IT INVENTORY MODULE — with Excel Import & Employee Validation
+// ============================================================
+
+let invCurrentLocation = '';
+let invEditId = null;
+
+async function inventoryRender(location) {
+  invCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const items = await DB.getInventory(location);
+  if (el) el.innerHTML = invHTML(location, items) + invModal() + invImportModal();
+}
+
+function invHTML(location, items) {
+  const pcs = items.filter(i => i.deviceType === 'PC').length;
+  const laptops = items.filter(i => i.deviceType === 'Laptop').length;
+  return `<div>
+    <div class="section-header">
+      <div><div class="section-title">💻 IT Inventory</div><div class="section-subtitle">${location} — ${items.length} device(s)</div></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="search-bar"><span class="search-icon">🔍</span><input id="inv-search" type="text" placeholder="Search employee, serial..." oninput="invFilter()"/></div>
+        <label class="btn btn-import" style="cursor:pointer;">
+          📥 Import Excel
+          <input type="file" id="inv-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="invImportExcel(this)"/>
+        </label>
+        <button class="btn btn-secondary" onclick="invOpenAdd()">+ Add Device</button>
+      </div>
+    </div>
+
+    <!-- Excel Template hint -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">📋</span>
+      <span><strong style="color:var(--text);">Excel columns:</strong>
+        Employee Name | Device Type (PC/Laptop) | Brand | Model | Description | Serial Number | RAM | Storage Type | Storage Size | SSD Serial |
+        Extra HDD (Yes/No) | Extra HDD Size | Extra HDD Serial | Mouse (Yes/No) |
+        <em style="color:var(--accent2);">PC only:</em> UPS Brand | UPS Model | UPS Size | Keyboard | Monitor Brand | Monitor Model | Monitor Serial | VGA (Yes/No) | VGA Model
+      </span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total Devices</div><div class="stat-value">${items.length}</div></div>
+      <div class="stat-card"><div class="stat-label">💻 PCs</div><div class="stat-value" style="color:var(--accent2)">${pcs}</div></div>
+      <div class="stat-card"><div class="stat-label">🖥️ Laptops</div><div class="stat-value" style="color:var(--warning)">${laptops}</div></div>
+    </div>
+
+    <!-- Bulk Delete Bar -->
+    <div class="bulk-bar" id="inv-bulk-bar">
+      <span class="bulk-bar-count" id="inv-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">devices</span>
+      <button class="btn-bulk-cancel" onclick="invBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="invBulkDelete()">🗑 Delete Selected</button>
+    </div>
+    <div class="card" style="padding:0;"><div class="table-wrap"><table>
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="inv-check-all" onchange="invToggleAll(this)" title="Select all"/></th><th>Employee</th><th>Type</th><th>Brand / Model</th><th>Description</th><th>Serial #</th><th>Storage</th><th>RAM</th><th>Monitor</th><th>Mouse</th><th>Actions</th></tr></thead>
+      <tbody id="inv-tbody">${invRows(items)}</tbody>
+    </table></div></div>
+  </div>`;
+}
+
+function invRows(items) {
+  if (items.length === 0) return `<tr><td colspan="10"><div class="empty-state"><div class="icon">💻</div><h3>No devices yet</h3><p>Add manually or import from Excel</p></div></td></tr>`;
+  return items.map(item => `<tr>
+    <td class="cb-col"><input type="checkbox" class="row-checkbox inv-row-cb" data-id="${item.id}" onchange="invRowCheck()"/></td>
+    <td><strong>${item.employee}</strong></td>
+    <td><span class="badge ${item.deviceType==='PC'?'badge-blue':'badge-green'}">${item.deviceType}</span></td>
+    <td>${item.brand} ${item.model}</td>
+    <td style="font-size:12px;color:var(--text2);max-width:200px;">${item.description||'—'}</td>
+    <td style="font-family:monospace;font-size:12px;">${item.serialNumber||'—'}</td>
+    <td>${item.storageType||''} ${item.storageSize?item.storageSize+'GB':'—'}${item.extraHdd?`<br><span class="badge badge-yellow" style="font-size:10px;">+HDD ${item.extraHddSize}GB</span>`:''}</td>
+    <td>${item.ram?item.ram+' GB':'—'}</td>
+    <td style="font-size:12px;">${item.deviceType==='PC'&&item.monitorBrand?`${item.monitorBrand} ${item.monitorModel||''}`:'—'}</td>
+    <td><span class="badge ${item.mouseGiven?'badge-green':'badge-gray'}">${item.mouseGiven?'Yes':'No'}</span></td>
+    <td class="action-btns">
+      <button class="btn btn-small btn-secondary" onclick="invOpenEdit('${item.id}')">Edit</button>
+      <button class="btn btn-small btn-danger" onclick="invDelete('${item.id}')">Del</button>
+    </td>
+  </tr>`).join('');
+}
+
+
+// ---- BULK DELETE ----
+function invRowCheck() {
+  const cbs = document.querySelectorAll('.inv-row-cb');
+  const checked = document.querySelectorAll('.inv-row-cb:checked');
+  document.getElementById('inv-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('inv-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('inv-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('inv-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function invToggleAll(cb) {
+  document.querySelectorAll('.inv-row-cb').forEach(c => c.checked = cb.checked);
+  invRowCheck();
+}
+function invBulkCancel() {
+  document.querySelectorAll('.inv-row-cb').forEach(c => c.checked = false);
+  document.getElementById('inv-check-all').checked = false;
+  document.getElementById('inv-bulk-bar').classList.remove('visible');
+}
+async function invBulkDelete() {
+  const ids = [...document.querySelectorAll('.inv-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} selected device(s)?`)) return;
+  toast('Deleting...');
+  for (const id of ids) await DB.deleteInventoryItem(id);
+  toast(`🗑 ${ids.length} device(s) deleted`);
+  inventoryRender(invCurrentLocation);
+}
+
+
+// ======================================================
+// EMPLOYEE NAME SMART MATCH
+// ======================================================
+let invEmpList = [];   // loaded when modal opens
+let invEmpConfirmed = false;
+
+async function invLoadEmpList() {
+  invEmpList = await DB.getEmployees(invCurrentLocation);
+}
+
+function invSimilarity(a, b) {
+  a = a.toLowerCase().trim(); b = b.toLowerCase().trim();
+  if (a === b) return 1;
+  const aWords = a.split(/\s+/); const bWords = b.split(/\s+/);
+  // First or last name exact match = high score
+  for (const aw of aWords) for (const bw of bWords) {
+    if (aw === bw && aw.length > 2) return 0.85;
+  }
+  // Starts-with
+  if (b.startsWith(a) || a.startsWith(b)) return 0.8;
+  // Character overlap (simple)
+  const setA = new Set(a.replace(/\s/g,'')); const setB = new Set(b.replace(/\s/g,''));
+  let inter = 0; setA.forEach(ch => { if(setB.has(ch)) inter++; });
+  return inter / Math.max(setA.size, setB.size) * 0.7;
+}
+
+function invEmpSearch(query) {
+  invEmpConfirmed = false;
+  document.getElementById('inv-emp-confirm').style.display = 'none';
+  const dd = document.getElementById('inv-emp-dropdown');
+  if (!query || query.length < 1) { dd.style.display = 'none'; return; }
+  const q = query.toLowerCase().trim();
+  const scored = invEmpList
+    .map(e => ({ e, score: invSimilarity(q, e.name) }))
+    .filter(x => x.score > 0.2)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 6);
+  if (!scored.length) {
+    dd.innerHTML = '<div style="padding:10px 14px;color:var(--text2);font-size:13px;">No matching employees found</div>';
+    dd.style.display = 'block'; return;
+  }
+  dd.innerHTML = scored.map(({e, score}) => {
+    const tag = score === 1 ? '✅ Exact match' : score >= 0.85 ? '🔵 Name match' : '🟡 Similar';
+    return `<div onclick="invEmpSelect('${e.name.replace(/'/g,"\\'")}','${e.department||''}','${e.designation||''}')"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"
+      onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <div>
+        <strong style="font-size:13px;">${e.name}</strong>
+        <span style="color:var(--text2);font-size:12px;margin-left:8px;">${e.department||''} ${e.designation?'· '+e.designation:''}</span>
+      </div>
+      <span style="font-size:11px;color:var(--text2);">${tag}</span>
+    </div>`;
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function invEmpSelect(name, dept, desig) {
+  document.getElementById('inv-employee').value = name;
+  document.getElementById('inv-emp-dropdown').style.display = 'none';
+  invEmpConfirmed = true;
+  const confirm = document.getElementById('inv-emp-confirm');
+  confirm.style.display = 'block';
+  confirm.innerHTML = `<span style="color:#38bdf8;">✅ Linked to <strong>${name}</strong>${dept ? ' · ' + dept : ''}${desig ? ' · ' + desig : ''}</span>
+    <button onclick="invEmpClear()" style="float:right;background:none;border:none;color:var(--text2);cursor:pointer;font-size:12px;">✕ Change</button>`;
+}
+
+function invEmpClear() {
+  document.getElementById('inv-employee').value = '';
+  document.getElementById('inv-emp-confirm').style.display = 'none';
+  document.getElementById('inv-emp-dropdown').style.display = 'none';
+  invEmpConfirmed = false;
+  document.getElementById('inv-employee').focus();
+}
+
+function invEmpHideDropdown() {
+  // If typed name exactly matches an employee, auto-confirm
+  const val = (document.getElementById('inv-employee').value||'').trim();
+  if (!invEmpConfirmed && val) {
+    const exact = invEmpList.find(e => e.name.toLowerCase() === val.toLowerCase());
+    if (exact) {
+      invEmpSelect(exact.name, exact.department||'', exact.designation||'');
+      return;
+    }
+  }
+  document.getElementById('inv-emp-dropdown').style.display = 'none';
+}
+
+async function invFilter() {
+  const q = document.getElementById('inv-search').value.toLowerCase();
+  const items = (await DB.getInventory(invCurrentLocation)).filter(i =>
+    (i.employee||'').toLowerCase().includes(q) || (i.serialNumber||'').toLowerCase().includes(q) ||
+    (i.brand||'').toLowerCase().includes(q) || (i.model||'').toLowerCase().includes(q)
+  );
+  document.getElementById('inv-tbody').innerHTML = invRows(items);
+}
+
+// ============================================================
+// EXCEL IMPORT
+// ============================================================
+
+async function invImportExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Show progress overlay
+  document.getElementById('inv-import-overlay').style.display = 'flex';
+  document.getElementById('inv-import-status').textContent = 'Reading Excel file...';
+  document.getElementById('inv-import-bar').style.width = '5%';
+  document.getElementById('inv-import-count').textContent = '';
+  document.getElementById('inv-import-warnings').innerHTML = '';
+
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'arraybuffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    // Auto-detect header row — skip label rows until 'Employee Name' is found
+    let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    if (rows.length > 0) {
+      const firstKey = Object.keys(rows[0])[0] || '';
+      if (firstKey !== 'Employee Name' && firstKey !== 'Employee') {
+        // Header is on row 2 (template has a top label row)
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: '', range: 1 });
+      }
+    }
+
+    if (rows.length === 0) {
+      invImportDone(); toast('Excel file is empty', 'error'); input.value=''; return;
+    }
+
+    // Load existing employees for name validation
+    document.getElementById('inv-import-status').textContent = 'Loading employee list for validation...';
+    const employees = await DB.getEmployees(invCurrentLocation);
+    const employeeNames = new Set(employees.map(e => e.name.trim().toLowerCase()));
+
+    // Load existing inventory to check duplicates
+    const existing = await DB.getInventory(invCurrentLocation);
+    const existingEmployees = new Set(existing.map(i => i.employee.trim().toLowerCase()));
+
+    const warnings = [];
+    const toSave = [];
+
+    // ---- VALIDATE EACH ROW ----
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2; // Excel row number (1=header)
+      const rowWarnings = [];
+
+      const employeeName = val(row, 'Employee Name', 'Employee', 'Name');
+      const deviceType   = val(row, 'Device Type', 'Type');
+      const brand        = val(row, 'Brand');
+      const model        = val(row, 'Model');
+      const serial       = val(row, 'Serial Number', 'Serial');
+      const description  = val(row, 'Description', 'Desc');
+
+      // --- SKIP instruction/notes rows silently ---
+      if (!employeeName ||
+          employeeName.toLowerCase().includes('write ') ||
+          employeeName.toLowerCase().includes('required') ||
+          employeeName.startsWith('📋') ||
+          employeeName.toUpperCase().startsWith('NOTE')) {
+        if (!employeeName) { warnings.push({ row: rowNum, name: '(blank)', type:'error', msgs: ['Employee Name is required — row skipped'] }); }
+        continue;
+      }
+
+      // --- MUST-HAVE FIELDS ---
+      if (!deviceType)   { rowWarnings.push('⚠️ Device Type is required (PC or Laptop)'); }
+      if (!brand)        { rowWarnings.push('⚠️ Brand is required'); }
+      if (!model)        { rowWarnings.push('⚠️ Model is required'); }
+
+      const devType = deviceType.toString().trim();
+      const isLaptop = devType.toLowerCase().includes('laptop');
+      const isPC = devType.toLowerCase().includes('pc') || devType.toLowerCase().includes('desktop');
+
+      if (!isLaptop && !isPC && deviceType) rowWarnings.push(`⚠️ Unknown Device Type "${deviceType}" — expected PC or Laptop`);
+
+      // Laptop: serial number is MUST
+      if (isLaptop && !serial) rowWarnings.push('❌ Serial Number is required for Laptops');
+
+      // Employee name validation against employees list
+      if (employeeName && employees.length > 0) {
+        if (!employeeNames.has(employeeName.toLowerCase())) {
+          rowWarnings.push(`🔴 "${employeeName}" not found in Employees list for ${invCurrentLocation}`);
+        }
+      }
+
+      // Duplicate check
+      if (existingEmployees.has(employeeName.toLowerCase())) {
+        rowWarnings.push(`⏭️ Already has a device in inventory — will be skipped`);
+        warnings.push({ row: rowNum, name: employeeName, type: 'skip', msgs: rowWarnings });
+        continue;
+      }
+
+      // Skip row if critical missing (device type, brand, model)
+      if (!deviceType || !brand || !model || (isLaptop && !serial)) {
+        if (rowWarnings.length > 0) warnings.push({ row: rowNum, name: employeeName, type: 'error', msgs: rowWarnings });
+        continue;
+      }
+
+      if (rowWarnings.length > 0) warnings.push({ row: rowNum, name: employeeName, type: 'warning', msgs: rowWarnings });
+
+      // Build item
+      const item = {
+        id: genId(),
+        employee: employeeName,
+        deviceType: isPC ? 'PC' : 'Laptop',
+        brand, model,
+        description,
+        serialNumber: serial,
+        ram: val(row, 'RAM', 'RAM (GB)'),
+        storageType: val(row, 'Storage Type') || 'SSD',
+        storageSize: val(row, 'Storage Size', 'Storage Size (GB)'),
+        ssdSerial: val(row, 'SSD Serial', 'Storage Serial'),
+        extraHdd: yesNo(val(row, 'Extra HDD')),
+        extraHddSize: val(row, 'Extra HDD Size'),
+        extraHddSerial: val(row, 'Extra HDD Serial'),
+        mouseGiven: yesNo(val(row, 'Mouse', 'Mouse Given')),
+        notes: val(row, 'Notes'),
+      };
+
+      if (isPC) {
+        item.upsBrand     = val(row, 'UPS Brand');
+        item.upsModel     = val(row, 'UPS Model');
+        item.upsSize      = val(row, 'UPS Size');
+        item.keyboard     = val(row, 'Keyboard', 'Keyboard Model');
+        item.monitorBrand = val(row, 'Monitor Brand');
+        item.monitorModel = val(row, 'Monitor Model');
+        item.monitorSerial= val(row, 'Monitor Serial', 'Monitor Serial Number');
+        item.vgaAdded     = yesNo(val(row, 'VGA', 'VGA Added'));
+        item.vgaModel     = val(row, 'VGA Model');
+      }
+
+      toSave.push(item);
+    }
+
+    // ---- SHOW WARNINGS BEFORE SAVING ----
+    if (warnings.length > 0) {
+      document.getElementById('inv-import-status').textContent = `Found ${warnings.length} issue(s). Review below then confirm.`;
+      const warnHTML = warnings.map(w => `
+        <div class="import-warn-row import-warn-${w.type}">
+          <div class="import-warn-header">
+            <span>${w.type==='error'?'❌':w.type==='skip'?'⏭️':'⚠️'} Row ${w.row}: <strong>${w.name}</strong></span>
+          </div>
+          ${w.msgs.map(m => `<div class="import-warn-msg">${m}</div>`).join('')}
+        </div>`).join('');
+      document.getElementById('inv-import-warnings').innerHTML = warnHTML;
+      document.getElementById('inv-import-confirm-area').style.display = 'flex';
+      document.getElementById('inv-import-confirm-text').textContent =
+        toSave.length > 0
+          ? `Proceed to import ${toSave.length} valid device(s)? (Issues above will be skipped)`
+          : 'No valid rows to import. Please fix the Excel file and try again.';
+      document.getElementById('inv-import-confirm-btn').style.display = toSave.length > 0 ? 'inline-block' : 'none';
+
+      // Store toSave for after confirmation
+      window._invPendingImport = toSave;
+      input.value = '';
+      return;
+    }
+
+    // No warnings — save directly
+    await invDoSave(toSave, input);
+
+  } catch (err) {
+    invImportDone();
+    toast('Error reading file: ' + err.message, 'error');
+    input.value = '';
+    console.error(err);
+  }
+}
+
+async function invConfirmImport() {
+  const toSave = window._invPendingImport || [];
+  document.getElementById('inv-import-confirm-area').style.display = 'none';
+  document.getElementById('inv-import-warnings').innerHTML = '';
+  await invDoSave(toSave, null);
+}
+
+async function invDoSave(toSave, input) {
+  if (toSave.length === 0) { invImportDone(); toast('Nothing to import', 'error'); return; }
+  document.getElementById('inv-import-status').textContent = `Saving ${toSave.length} devices...`;
+  document.getElementById('inv-import-bar').style.width = '10%';
+
+  for (let i = 0; i < toSave.length; i++) {
+    const item = toSave[i];
+    await DB.saveInventoryItem(invCurrentLocation, item);
+    const pct = Math.round(((i+1)/toSave.length)*100);
+    document.getElementById('inv-import-bar').style.width = pct+'%';
+    document.getElementById('inv-import-count').textContent = `${i+1} / ${toSave.length}`;
+    document.getElementById('inv-import-status').textContent = `✅ Saved: ${item.employee}`;
+  }
+
+  invImportDone();
+  toast(`✅ ${toSave.length} device(s) imported!`);
+  if (input) input.value = '';
+  window._invPendingImport = [];
+  inventoryRender(invCurrentLocation);
+}
+
+function invImportDone() {
+  document.getElementById('inv-import-overlay').style.display = 'none';
+}
+
+// ---- Helpers ----
+function val(row, ...keys) {
+  for (const k of keys) {
+    const v = (row[k] || '').toString().trim();
+    if (v) return v;
+  }
+  return '';
+}
+
+function yesNo(v) {
+  return v.toLowerCase() === 'yes' || v === '1' || v.toLowerCase() === 'true';
+}
+
+// ============================================================
+// IMPORT OVERLAY MODAL
+// ============================================================
+function invImportModal() {
+  return `
+  <div id="inv-import-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:2000;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:90%;max-width:640px;max-height:80vh;overflow-y:auto;">
+      <div style="font-size:32px;text-align:center;margin-bottom:12px;">📥</div>
+      <div style="font-size:17px;font-weight:700;text-align:center;margin-bottom:6px;" id="inv-import-status">Reading...</div>
+      <div style="background:var(--surface2);border-radius:8px;height:8px;overflow:hidden;margin-bottom:8px;">
+        <div id="inv-import-bar" style="background:var(--accent);height:100%;width:0%;transition:width 0.3s;"></div>
+      </div>
+      <div id="inv-import-count" style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px;"></div>
+
+      <!-- Warnings list -->
+      <div id="inv-import-warnings" style="margin-bottom:16px;"></div>
+
+      <!-- Confirm area -->
+      <div id="inv-import-confirm-area" style="display:none;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;">
+        <div id="inv-import-confirm-text" style="font-size:13px;color:var(--text2);text-align:center;width:100%;"></div>
+        <button class="btn btn-secondary" onclick="invImportDone()">Cancel</button>
+        <button id="inv-import-confirm-btn" class="btn btn-primary" onclick="invConfirmImport()" style="width:auto;">Import Valid Rows</button>
+      </div>
+
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn btn-secondary" onclick="invImportDone()" style="font-size:12px;padding:6px 16px;">Close</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// ADD / EDIT MODAL
+// ============================================================
+function invModal() {
+  return `<div id="inv-modal" class="modal-overlay" style="display:none;">
+    <div class="modal" style="max-width:780px;">
+      <div class="modal-header"><div class="modal-title" id="inv-modal-title">Add Device</div><button class="btn-close" onclick="invCloseModal()">×</button></div>
+      <div class="modal-body"><div class="form-grid">
+        <div class="form-section-label">Basic Information</div>
+        <div class="form-group span2" style="position:relative;">
+          <label>Employee Name</label>
+          <input id="inv-employee" type="text" placeholder="Start typing a name..." autocomplete="off"
+            oninput="invEmpSearch(this.value)" onblur="setTimeout(invEmpHideDropdown,200)"/>
+          <div id="inv-emp-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+          <div id="inv-emp-confirm" style="display:none;margin-top:8px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);border-radius:8px;padding:10px 14px;font-size:13px;"></div>
+        </div>
+        <div class="form-group"><label>Device Type</label><select id="inv-type" onchange="invTogglePCFields()"><option value="Laptop">Laptop</option><option value="PC">PC (Desktop)</option></select></div>
+        <div class="form-group"><label>Brand</label><input id="inv-brand" type="text" placeholder="Dell, HP, Lenovo..."/></div>
+        <div class="form-group"><label>Model</label><input id="inv-model" type="text" placeholder="Model name"/></div>
+        <div class="form-group span2"><label>Description</label><input id="inv-description" type="text" placeholder="e.g. Dell Inspiron 15 3511 Core i3-1115G4 3.00GHz"/></div>
+        <div class="form-group"><label>Serial Number <span id="inv-serial-hint" style="color:var(--danger);font-size:11px;">(required for Laptop)</span></label><input id="inv-serial" type="text" placeholder="Device serial #"/></div>
+        <div class="form-group"><label>RAM (GB)</label><input id="inv-ram" type="number" placeholder="8, 16, 32..."/></div>
+        <hr class="form-section-divider"/><div class="form-section-label">Primary Storage</div>
+        <div class="form-group"><label>Storage Type</label><select id="inv-storage-type"><option value="SSD">SSD</option><option value="HDD">HDD</option><option value="NVMe">NVMe</option></select></div>
+        <div class="form-group"><label>Storage Size (GB)</label><input id="inv-storage-size" type="number" placeholder="256, 512, 1000..."/></div>
+        <div class="form-group span2"><label>SSD/HDD Serial Number</label><input id="inv-ssd-serial" type="text" placeholder="Storage serial #"/></div>
+        <hr class="form-section-divider"/><div class="form-section-label">Extra Storage</div>
+        <div class="form-group span2"><div class="checkbox-group"><input type="checkbox" id="inv-extra-hdd" onchange="invToggleExtraHdd()"/><label for="inv-extra-hdd">Extra HDD Added</label></div></div>
+        <div id="inv-extra-hdd-fields" style="display:none;grid-column:span 2;"><div class="form-grid">
+          <div class="form-group"><label>Extra HDD Size (GB)</label><input id="inv-extra-hdd-size" type="number"/></div>
+          <div class="form-group"><label>Extra HDD Serial</label><input id="inv-extra-hdd-serial" type="text"/></div>
+        </div></div>
+        <hr class="form-section-divider"/><div class="form-section-label">Peripherals</div>
+        <div class="form-group span2"><div class="checkbox-group"><input type="checkbox" id="inv-mouse"/><label for="inv-mouse">Mouse Given</label></div></div>
+        <div id="inv-pc-fields" style="display:none;grid-column:span 2;"><div class="form-grid">
+          <div class="form-section-label">PC Peripherals</div>
+          <div class="form-group"><label>UPS Brand</label><input id="inv-ups-brand" type="text" placeholder="APC, Microtek..."/></div>
+          <div class="form-group"><label>UPS Model</label><input id="inv-ups-model" type="text"/></div>
+          <div class="form-group span2"><label>UPS Size (VA)</label><input id="inv-ups-size" type="text" placeholder="e.g. 650VA"/></div>
+          <div class="form-group"><label>Keyboard Model</label><input id="inv-keyboard" type="text"/></div>
+          <div class="form-group"><label>Monitor Brand</label><input id="inv-monitor-brand" type="text"/></div>
+          <div class="form-group"><label>Monitor Model</label><input id="inv-monitor-model" type="text"/></div>
+          <div class="form-group"><label>Monitor Serial #</label><input id="inv-monitor-serial" type="text"/></div>
+          <div class="form-group span2"><div class="checkbox-group"><input type="checkbox" id="inv-vga" onchange="invToggleVga()"/><label for="inv-vga">VGA Card Added</label></div></div>
+          <div id="inv-vga-fields" style="display:none;grid-column:span 2;"><div class="form-group"><label>VGA Model</label><input id="inv-vga-model" type="text"/></div></div>
+        </div></div>
+        <hr class="form-section-divider"/>
+        <div class="form-group span2"><label>Additional Notes</label><textarea id="inv-notes" rows="2"></textarea></div>
+      </div></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="invCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="invSave()" style="width:auto">Save Device</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function invTogglePCFields() {
+  const isPC = document.getElementById('inv-type').value === 'PC';
+  document.getElementById('inv-pc-fields').style.display = isPC ? 'grid' : 'none';
+  document.getElementById('inv-serial-hint').textContent = isPC ? '(optional for PC)' : '(required for Laptop)';
+  document.getElementById('inv-serial-hint').style.color = isPC ? 'var(--text2)' : 'var(--danger)';
+}
+function invToggleExtraHdd() { document.getElementById('inv-extra-hdd-fields').style.display = document.getElementById('inv-extra-hdd').checked ? 'grid' : 'none'; }
+function invToggleVga() { document.getElementById('inv-vga-fields').style.display = document.getElementById('inv-vga').checked ? 'block' : 'none'; }
+
+function invOpenAdd() {
+  invEditId = null;
+  invEmpConfirmed = false;
+  invLoadEmpList();
+  document.getElementById('inv-modal-title').textContent = 'Add Device';
+  ['inv-employee','inv-brand','inv-model','inv-description','inv-serial','inv-ram','inv-storage-size','inv-ssd-serial','inv-extra-hdd-size','inv-extra-hdd-serial','inv-ups-brand','inv-ups-model','inv-ups-size','inv-keyboard','inv-monitor-brand','inv-monitor-model','inv-monitor-serial','inv-vga-model','inv-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['inv-extra-hdd','inv-mouse','inv-vga'].forEach(id => { const el=document.getElementById(id); if(el) el.checked=false; });
+  document.getElementById('inv-extra-hdd-fields').style.display='none';
+  document.getElementById('inv-vga-fields').style.display='none';
+  document.getElementById('inv-type').value='Laptop'; invTogglePCFields();
+  document.getElementById('inv-modal').style.display='flex';
+}
+
+async function invOpenEdit(id) {
+  await invLoadEmpList();
+  const items = await DB.getInventory(invCurrentLocation);
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  invEditId = id;
+  document.getElementById('inv-modal-title').textContent = 'Edit Device';
+  document.getElementById('inv-employee').value = item.employee||'';
+  if (item.employee) { const e = invEmpList.find(x=>x.name===item.employee); invEmpSelect(item.employee, e?e.department:'', e?e.designation:''); }
+  document.getElementById('inv-type').value = item.deviceType||'Laptop';
+  document.getElementById('inv-brand').value = item.brand||'';
+  document.getElementById('inv-model').value = item.model||'';
+  document.getElementById('inv-serial').value = item.serialNumber||'';
+  document.getElementById('inv-description').value = item.description||'';
+  document.getElementById('inv-ram').value = item.ram||'';
+  document.getElementById('inv-storage-type').value = item.storageType||'SSD';
+  document.getElementById('inv-storage-size').value = item.storageSize||'';
+  document.getElementById('inv-ssd-serial').value = item.ssdSerial||'';
+  document.getElementById('inv-extra-hdd').checked = !!item.extraHdd;
+  document.getElementById('inv-extra-hdd-fields').style.display = item.extraHdd?'grid':'none';
+  document.getElementById('inv-extra-hdd-size').value = item.extraHddSize||'';
+  document.getElementById('inv-extra-hdd-serial').value = item.extraHddSerial||'';
+  document.getElementById('inv-mouse').checked = !!item.mouseGiven;
+  document.getElementById('inv-ups-brand').value = item.upsBrand||'';
+  document.getElementById('inv-ups-model').value = item.upsModel||'';
+  document.getElementById('inv-ups-size').value = item.upsSize||'';
+  document.getElementById('inv-keyboard').value = item.keyboard||'';
+  document.getElementById('inv-monitor-brand').value = item.monitorBrand||'';
+  document.getElementById('inv-monitor-model').value = item.monitorModel||'';
+  document.getElementById('inv-monitor-serial').value = item.monitorSerial||'';
+  document.getElementById('inv-vga').checked = !!item.vgaAdded;
+  document.getElementById('inv-vga-fields').style.display = item.vgaAdded?'block':'none';
+  document.getElementById('inv-vga-model').value = item.vgaModel||'';
+  document.getElementById('inv-notes').value = item.notes||'';
+  invTogglePCFields();
+  document.getElementById('inv-modal').style.display='flex';
+}
+
+function invCloseModal() { document.getElementById('inv-modal').style.display='none'; }
+
+async function invSave() {
+  const employee = document.getElementById('inv-employee').value.trim();
+  // Warn if employee not linked
+  if (!invEmpConfirmed && employee) {
+    const exact = invEmpList.find(e => e.name.toLowerCase() === employee.toLowerCase());
+    if (!exact) {
+      const top = invEmpList.map(e=>({e,s:invSimilarity(employee,e.name)})).sort((a,b)=>b.s-a.s)[0];
+      const hint = top && top.s > 0.3 ? `\nDid you mean: "${top.e.name}"?` : '';
+      if (!confirm(`"${employee}" was not found in the Employees list.${hint}\n\nSave anyway?`)) return;
+    }
+  }
+  const deviceType = document.getElementById('inv-type').value;
+  const brand = document.getElementById('inv-brand').value.trim();
+  const model = document.getElementById('inv-model').value.trim();
+  const serial = document.getElementById('inv-serial').value.trim();
+
+  if (!employee) { toast('Employee name is required','error'); return; }
+  if (!brand)    { toast('Brand is required','error'); return; }
+  if (!model)    { toast('Model is required','error'); return; }
+  if (deviceType === 'Laptop' && !serial) { toast('Serial number is required for Laptops','error'); return; }
+
+  const item = {
+    id: invEditId||genId(), employee, deviceType, brand, model,
+    serialNumber: serial,
+    description: document.getElementById('inv-description').value.trim(),
+    ram: document.getElementById('inv-ram').value,
+    storageType: document.getElementById('inv-storage-type').value,
+    storageSize: document.getElementById('inv-storage-size').value,
+    ssdSerial: document.getElementById('inv-ssd-serial').value.trim(),
+    extraHdd: document.getElementById('inv-extra-hdd').checked,
+    extraHddSize: document.getElementById('inv-extra-hdd-size').value,
+    extraHddSerial: document.getElementById('inv-extra-hdd-serial').value.trim(),
+    mouseGiven: document.getElementById('inv-mouse').checked,
+    notes: document.getElementById('inv-notes').value.trim(),
+  };
+  if (deviceType === 'PC') {
+    item.upsBrand = document.getElementById('inv-ups-brand').value.trim();
+    item.upsModel = document.getElementById('inv-ups-model').value.trim();
+    item.upsSize = document.getElementById('inv-ups-size').value.trim();
+    item.keyboard = document.getElementById('inv-keyboard').value.trim();
+    item.monitorBrand = document.getElementById('inv-monitor-brand').value.trim();
+    item.monitorModel = document.getElementById('inv-monitor-model').value.trim();
+    item.monitorSerial = document.getElementById('inv-monitor-serial').value.trim();
+    item.vgaAdded = document.getElementById('inv-vga').checked;
+    item.vgaModel = item.vgaAdded ? document.getElementById('inv-vga-model').value.trim() : '';
+  }
+  toast('Saving...'); await DB.saveInventoryItem(invCurrentLocation, item);
+  invCloseModal(); toast('Device saved!'); inventoryRender(invCurrentLocation);
+}
+
+async function invDelete(id) {
+  if (!confirm('Delete this device record?')) return;
+  await DB.deleteInventoryItem(id); toast('Device deleted'); inventoryRender(invCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
+// PRINTERS MODULE — Supabase version
+// ============================================================
+let printerCurrentLocation = '';
+let printerEditId = null;
+
+async function printersRender(location) {
+  printerCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const printers = await DB.getPrinters(location);
+  if (el) el.innerHTML = printersHTML(location, printers) + printerModal();
+}
+
+function printersHTML(location, printers) {
+  return `<div>
+    <div class="section-header">
+      <div><div class="section-title">🖨️ Printers</div><div class="section-subtitle">${location} — ${printers.length} printer(s)</div></div>
+      <button class="btn btn-secondary" onclick="printerOpenAdd()">+ Add Printer</button>
+    </div>
+    <div class="bulk-bar" id="pr-bulk-bar">
+      <span class="bulk-bar-count" id="pr-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">printers</span>
+      <button class="btn-bulk-cancel" onclick="prBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="prBulkDelete()">🗑 Delete Selected</button>
+    </div>
+    <div class="card" style="padding:0;"><div class="table-wrap"><table>
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="pr-check-all" onchange="prToggleAll(this)"/></th><th>Brand / Model</th><th>Serial #</th><th>Color</th><th>Duplex</th><th>Department</th><th>Network</th><th>IP Address</th><th>Actions</th></tr></thead>
+      <tbody>${printers.length===0?`<tr><td colspan="9"><div class="empty-state"><div class="icon">🖨️</div><h3>No printers yet</h3></div></td></tr>`:
+        printers.map(p=>`<tr>
+          <td class="cb-col"><input type="checkbox" class="row-checkbox pr-row-cb" data-id="${p.id}" onchange="prRowCheck()"/></td>
+          <td><strong>${p.brand}</strong><br><span style="font-size:12px;color:var(--text2)">${p.model}</span></td>
+          <td style="font-family:monospace;font-size:12px;">${p.serialNumber}</td>
+          <td><span class="badge ${p.color?'badge-blue':'badge-gray'}">${p.color?'Color':'B&W'}</span></td>
+          <td><span class="badge ${p.duplex?'badge-green':'badge-gray'}">${p.duplex?'Yes':'No'}</span></td>
+          <td>${p.department}</td>
+          <td><span class="badge ${p.network?'badge-green':'badge-gray'}">${p.network?'Network':'Local'}</span></td>
+          <td style="font-family:monospace;font-size:12px;">${p.network&&p.ipAddress?p.ipAddress:'—'}</td>
+          <td class="action-btns">
+            <button class="btn btn-small btn-secondary" onclick="printerOpenEdit('${p.id}')">Edit</button>
+            <button class="btn btn-small btn-danger" onclick="printerDelete('${p.id}')">Del</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div></div>
+  </div>`;
+}
+
+function printerModal() {
+  return `<div id="printer-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="printer-modal-title">Add Printer</div><button class="btn-close" onclick="printerCloseModal()">×</button></div>
+      <div class="modal-body"><div class="form-grid">
+        <div class="form-group"><label>Brand</label><input id="pr-brand" type="text" placeholder="HP, Canon, Epson..."/></div>
+        <div class="form-group"><label>Model</label><input id="pr-model" type="text"/></div>
+        <div class="form-group"><label>Serial Number</label><input id="pr-serial" type="text"/></div>
+        <div class="form-group"><label>Assigned Department</label><input id="pr-dept" type="text"/></div>
+        <div class="form-group"><div class="checkbox-group"><input type="checkbox" id="pr-color"/><label for="pr-color">Color Printer</label></div></div>
+        <div class="form-group"><div class="checkbox-group"><input type="checkbox" id="pr-duplex"/><label for="pr-duplex">Duplex (Double-sided)</label></div></div>
+        <div class="form-group span2"><div class="checkbox-group"><input type="checkbox" id="pr-network" onchange="printerToggleIP()"/><label for="pr-network">Network Printer</label></div></div>
+        <div id="pr-ip-field" style="display:none;grid-column:span 2;"><div class="form-group"><label>IP Address</label><input id="pr-ip" type="text" placeholder="192.168.1.100"/></div></div>
+      </div></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="printerCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="printerSave()" style="width:auto">Save Printer</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+
+function prRowCheck() {
+  const cbs = document.querySelectorAll('.pr-row-cb');
+  const checked = document.querySelectorAll('.pr-row-cb:checked');
+  document.getElementById('pr-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('pr-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('pr-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('pr-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function prToggleAll(cb) { document.querySelectorAll('.pr-row-cb').forEach(c => c.checked = cb.checked); prRowCheck(); }
+function prBulkCancel() {
+  document.querySelectorAll('.pr-row-cb').forEach(c => c.checked = false);
+  document.getElementById('pr-check-all').checked = false;
+  document.getElementById('pr-bulk-bar').classList.remove('visible');
+}
+async function prBulkDelete() {
+  const ids = [...document.querySelectorAll('.pr-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} printer(s)?`)) return;
+  for (const id of ids) await DB.deletePrinter(id);
+  toast(`🗑 ${ids.length} printer(s) deleted`);
+  printersRender(printerCurrentLocation);
+}
+
+function printerToggleIP() { document.getElementById('pr-ip-field').style.display = document.getElementById('pr-network').checked ? 'grid' : 'none'; }
+
+function printerOpenAdd() {
+  printerEditId = null;
+  document.getElementById('printer-modal-title').textContent = 'Add Printer';
+  ['pr-brand','pr-model','pr-serial','pr-dept','pr-ip'].forEach(id => document.getElementById(id).value='');
+  ['pr-color','pr-duplex','pr-network'].forEach(id => document.getElementById(id).checked=false);
+  document.getElementById('pr-ip-field').style.display='none';
+  document.getElementById('printer-modal').style.display='flex';
+}
+
+async function printerOpenEdit(id) {
+  const printers = await DB.getPrinters(printerCurrentLocation);
+  const p = printers.find(x => x.id === id);
+  if (!p) return;
+  printerEditId = id;
+  document.getElementById('printer-modal-title').textContent = 'Edit Printer';
+  document.getElementById('pr-brand').value = p.brand||'';
+  document.getElementById('pr-model').value = p.model||'';
+  document.getElementById('pr-serial').value = p.serialNumber||'';
+  document.getElementById('pr-dept').value = p.department||'';
+  document.getElementById('pr-color').checked = !!p.color;
+  document.getElementById('pr-duplex').checked = !!p.duplex;
+  document.getElementById('pr-network').checked = !!p.network;
+  document.getElementById('pr-ip').value = p.ipAddress||'';
+  document.getElementById('pr-ip-field').style.display = p.network?'grid':'none';
+  document.getElementById('printer-modal').style.display='flex';
+}
+
+function printerCloseModal() { document.getElementById('printer-modal').style.display='none'; }
+
+async function printerSave() {
+  const brand = document.getElementById('pr-brand').value.trim();
+  if (!brand) { toast('Brand is required','error'); return; }
+  const item = { id: printerEditId||genId(), brand, model: document.getElementById('pr-model').value.trim(), serialNumber: document.getElementById('pr-serial').value.trim(), department: document.getElementById('pr-dept').value.trim(), color: document.getElementById('pr-color').checked, duplex: document.getElementById('pr-duplex').checked, network: document.getElementById('pr-network').checked, ipAddress: document.getElementById('pr-ip').value.trim() };
+  toast('Saving...'); await DB.savePrinter(printerCurrentLocation, item);
+  printerCloseModal(); toast('Printer saved!'); printersRender(printerCurrentLocation);
+}
+
+async function printerDelete(id) {
+  if (!confirm('Delete this printer?')) return;
+  await DB.deletePrinter(id); toast('Printer deleted'); printersRender(printerCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
+// MOBILE PHONES MODULE — Supabase version
+// ============================================================
+let mobileCurrentLocation = '';
+let mobileEditId = null;
+
+async function mobilesRender(location) {
+  mobileCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const mobiles = await DB.getMobiles(location);
+  if (el) el.innerHTML = mobilesHTML(location, mobiles) + mobileModal();
+}
+
+function mobilesHTML(location, mobiles) {
+  return `<div>
+    <div class="section-header">
+      <div><div class="section-title">📱 Mobile Phones</div><div class="section-subtitle">${location} — ${mobiles.length} device(s)</div></div>
+      <button class="btn btn-secondary" onclick="mobileOpenAdd()">+ Add Mobile</button>
+    </div>
+    <div class="bulk-bar" id="mob-bulk-bar">
+      <span class="bulk-bar-count" id="mob-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">phones</span>
+      <button class="btn-bulk-cancel" onclick="mobBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="mobBulkDelete()">🗑 Delete Selected</button>
+    </div>
+    <div class="card" style="padding:0;"><div class="table-wrap"><table>
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="mob-check-all" onchange="mobToggleAll(this)"/></th><th>Employee</th><th>Department</th><th>Brand / Model</th><th>Serial #</th><th>IMEI</th><th>Mobile Number</th><th>Actions</th></tr></thead>
+      <tbody>${mobiles.length===0?`<tr><td colspan="8"><div class="empty-state"><div class="icon">📱</div><h3>No mobile phones yet</h3></div></td></tr>`:
+        mobiles.map(m=>`<tr>
+          <td class="cb-col"><input type="checkbox" class="row-checkbox mob-row-cb" data-id="${m.id}" onchange="mobRowCheck()"/></td>
+          <td><strong>${m.employee}</strong></td><td>${m.department}</td>
+          <td>${m.brand} ${m.model}</td>
+          <td style="font-family:monospace;font-size:12px;">${m.serialNumber}</td>
+          <td style="font-family:monospace;font-size:12px;">${m.imei}</td>
+          <td><span class="badge badge-blue">${m.mobileNumber}</span></td>
+          <td class="action-btns">
+            <button class="btn btn-small btn-secondary" onclick="mobileOpenEdit('${m.id}')">Edit</button>
+            <button class="btn btn-small btn-danger" onclick="mobileDelete('${m.id}')">Del</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div></div>
+  </div>`;
+}
+
+function mobileModal() {
+  return `<div id="mobile-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="mobile-modal-title">Add Mobile Phone</div><button class="btn-close" onclick="mobileCloseModal()">×</button></div>
+      <div class="modal-body"><div class="form-grid">
+        <div class="form-group"><label>Employee Name</label><input id="mob-employee" type="text"/></div>
+        <div class="form-group"><label>Department</label><input id="mob-dept" type="text"/></div>
+        <div class="form-group"><label>Brand</label><input id="mob-brand" type="text"/></div>
+        <div class="form-group"><label>Model</label><input id="mob-model" type="text"/></div>
+        <div class="form-group"><label>Serial Number</label><input id="mob-serial" type="text"/></div>
+        <div class="form-group"><label>IMEI Number</label><input id="mob-imei" type="text"/></div>
+        <div class="form-group span2"><label>Mobile Number</label><input id="mob-number" type="text" placeholder="+94 77 ..."/></div>
+      </div></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="mobileCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="mobileSave()" style="width:auto">Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+
+function mobRowCheck() {
+  const cbs = document.querySelectorAll('.mob-row-cb');
+  const checked = document.querySelectorAll('.mob-row-cb:checked');
+  document.getElementById('mob-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('mob-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('mob-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('mob-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function mobToggleAll(cb) { document.querySelectorAll('.mob-row-cb').forEach(c => c.checked = cb.checked); mobRowCheck(); }
+function mobBulkCancel() {
+  document.querySelectorAll('.mob-row-cb').forEach(c => c.checked = false);
+  document.getElementById('mob-check-all').checked = false;
+  document.getElementById('mob-bulk-bar').classList.remove('visible');
+}
+async function mobBulkDelete() {
+  const ids = [...document.querySelectorAll('.mob-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} phone(s)?`)) return;
+  for (const id of ids) await DB.deleteMobile(id);
+  toast(`🗑 ${ids.length} phone(s) deleted`);
+  mobilesRender(mobileCurrentLocation);
+}
+
+function mobileOpenAdd() {
+  mobileEditId = null;
+  document.getElementById('mobile-modal-title').textContent = 'Add Mobile Phone';
+  ['mob-employee','mob-dept','mob-brand','mob-model','mob-serial','mob-imei','mob-number'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('mobile-modal').style.display='flex';
+}
+
+async function mobileOpenEdit(id) {
+  const mobiles = await DB.getMobiles(mobileCurrentLocation);
+  const m = mobiles.find(x => x.id === id);
+  if (!m) return;
+  mobileEditId = id;
+  document.getElementById('mobile-modal-title').textContent = 'Edit Mobile Phone';
+  document.getElementById('mob-employee').value = m.employee||'';
+  document.getElementById('mob-dept').value = m.department||'';
+  document.getElementById('mob-brand').value = m.brand||'';
+  document.getElementById('mob-model').value = m.model||'';
+  document.getElementById('mob-serial').value = m.serialNumber||'';
+  document.getElementById('mob-imei').value = m.imei||'';
+  document.getElementById('mob-number').value = m.mobileNumber||'';
+  document.getElementById('mobile-modal').style.display='flex';
+}
+
+function mobileCloseModal() { document.getElementById('mobile-modal').style.display='none'; }
+
+async function mobileSave() {
+  const employee = document.getElementById('mob-employee').value.trim();
+  if (!employee) { toast('Employee name is required','error'); return; }
+  const item = { id: mobileEditId||genId(), employee, department: document.getElementById('mob-dept').value.trim(), brand: document.getElementById('mob-brand').value.trim(), model: document.getElementById('mob-model').value.trim(), serialNumber: document.getElementById('mob-serial').value.trim(), imei: document.getElementById('mob-imei').value.trim(), mobileNumber: document.getElementById('mob-number').value.trim() };
+  toast('Saving...'); await DB.saveMobile(mobileCurrentLocation, item);
+  mobileCloseModal(); toast('Mobile phone saved!'); mobilesRender(mobileCurrentLocation);
+}
+
+async function mobileDelete(id) {
+  if (!confirm('Delete this mobile phone record?')) return;
+  await DB.deleteMobile(id); toast('Mobile deleted'); mobilesRender(mobileCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
+// IP MANAGER MODULE — Supabase version
+// ============================================================
+let ipCurrentLocation = '';
+let ipEditId = null;
+
+async function ipRender(location) {
+  ipCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const ips = await DB.getIPs(location);
+  if (el) el.innerHTML = ipHTML(location, ips) + ipModal();
+}
+
+function ipHTML(location, ips) {
+  const used = ips.filter(i => i.employee).length;
+  return `<div>
+    <div class="section-header">
+      <div><div class="section-title">🌐 IP Manager</div><div class="section-subtitle">${location} — ${used} assigned / ${ips.length} total</div></div>
+      <div style="display:flex;gap:10px;">
+        <div class="search-bar"><span class="search-icon">🔍</span><input id="ip-search" type="text" placeholder="Search IP, employee..." oninput="ipFilter()"/></div>
+        <button class="btn btn-secondary" onclick="ipOpenAdd()">+ Assign IP</button>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total IPs</div><div class="stat-value">${ips.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Assigned</div><div class="stat-value" style="color:var(--accent)">${used}</div></div>
+      <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value" style="color:var(--warning)">${ips.filter(i=>!i.employee).length}</div></div>
+    </div>
+    <div class="bulk-bar" id="ip-bulk-bar">
+      <span class="bulk-bar-count" id="ip-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">IPs</span>
+      <button class="btn-bulk-cancel" onclick="ipBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="ipBulkDelete()">🗑 Delete Selected</button>
+    </div>
+    <div class="card" style="padding:0;"><div class="table-wrap"><table>
+      <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="ip-check-all" onchange="ipToggleAll(this)"/></th><th>IP Address</th><th>Employee</th><th>Device</th><th>MAC Address</th><th>Department</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody id="ip-tbody">${ipRows(ips)}</tbody>
+    </table></div></div>
+  </div>`;
+}
+
+function ipRows(ips) {
+  if (ips.length === 0) return `<tr><td colspan="9"><div class="empty-state"><div class="icon">🌐</div><h3>No IPs assigned yet</h3></div></td></tr>`;
+  return ips.map(i=>`<tr>
+    <td class="cb-col"><input type="checkbox" class="row-checkbox ip-row-cb" data-id="${i.id}" onchange="ipRowCheck()"/></td>
+    <td style="font-family:monospace;font-weight:700;color:var(--accent)">${i.ipAddress}</td>
+    <td>${i.employee||'—'}</td><td>${i.device||'—'}</td>
+    <td style="font-family:monospace;font-size:12px;">${i.mac||'—'}</td>
+    <td>${i.department||'—'}</td>
+    <td><span class="badge ${i.employee?'badge-green':'badge-gray'}">${i.employee?'Assigned':'Free'}</span></td>
+    <td style="font-size:12px;color:var(--text2)">${i.notes||'—'}</td>
+    <td class="action-btns">
+      <button class="btn btn-small btn-secondary" onclick="ipOpenEdit('${i.id}')">Edit</button>
+      <button class="btn btn-small btn-danger" onclick="ipDelete('${i.id}')">Del</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function ipFilter() {
+  const q = document.getElementById('ip-search').value.toLowerCase();
+  const ips = (await DB.getIPs(ipCurrentLocation)).filter(i =>
+    i.ipAddress.includes(q)||(i.employee||'').toLowerCase().includes(q)||(i.department||'').toLowerCase().includes(q)
+  );
+  document.getElementById('ip-tbody').innerHTML = ipRows(ips);
+}
+
+function ipModal() {
+  return `<div id="ip-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="ip-modal-title">Assign IP</div><button class="btn-close" onclick="ipCloseModal()">×</button></div>
+      <div class="modal-body"><div class="form-grid">
+        <div class="form-group"><label>IP Address</label><input id="ip-addr" type="text" placeholder="192.168.1.x"/></div>
+        <div class="form-group"><label>Employee Name</label><input id="ip-employee" type="text" placeholder="Leave blank if unassigned"/></div>
+        <div class="form-group"><label>Device / Hostname</label><input id="ip-device" type="text"/></div>
+        <div class="form-group"><label>MAC Address</label><input id="ip-mac" type="text" placeholder="AA:BB:CC:DD:EE:FF"/></div>
+        <div class="form-group span2"><label>Department</label><input id="ip-dept" type="text"/></div>
+        <div class="form-group span2"><label>Notes</label><input id="ip-notes" type="text"/></div>
+      </div></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="ipCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="ipSave()" style="width:auto">Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+
+function ipRowCheck() {
+  const cbs = document.querySelectorAll('.ip-row-cb');
+  const checked = document.querySelectorAll('.ip-row-cb:checked');
+  document.getElementById('ip-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('ip-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('ip-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('ip-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function ipToggleAll(cb) { document.querySelectorAll('.ip-row-cb').forEach(c => c.checked = cb.checked); ipRowCheck(); }
+function ipBulkCancel() {
+  document.querySelectorAll('.ip-row-cb').forEach(c => c.checked = false);
+  document.getElementById('ip-check-all').checked = false;
+  document.getElementById('ip-bulk-bar').classList.remove('visible');
+}
+async function ipBulkDelete() {
+  const ids = [...document.querySelectorAll('.ip-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} IP assignment(s)?`)) return;
+  for (const id of ids) await DB.deleteIP(id);
+  toast(`🗑 ${ids.length} IP(s) deleted`);
+  ipRender(ipCurrentLocation);
+}
+
+function ipOpenAdd() {
+  ipEditId = null;
+  ['ip-addr','ip-employee','ip-device','ip-mac','ip-dept','ip-notes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('ip-modal').style.display='flex';
+}
+
+async function ipOpenEdit(id) {
+  const ips = await DB.getIPs(ipCurrentLocation);
+  const i = ips.find(x => x.id === id);
+  if (!i) return;
+  ipEditId = id;
+  document.getElementById('ip-addr').value = i.ipAddress||'';
+  document.getElementById('ip-employee').value = i.employee||'';
+  document.getElementById('ip-device').value = i.device||'';
+  document.getElementById('ip-mac').value = i.mac||'';
+  document.getElementById('ip-dept').value = i.department||'';
+  document.getElementById('ip-notes').value = i.notes||'';
+  document.getElementById('ip-modal').style.display='flex';
+}
+
+function ipCloseModal() { document.getElementById('ip-modal').style.display='none'; }
+
+async function ipSave() {
+  const ipAddress = document.getElementById('ip-addr').value.trim();
+  if (!ipAddress) { toast('IP address is required','error'); return; }
+  const item = { id: ipEditId||genId(), ipAddress, employee: document.getElementById('ip-employee').value.trim(), device: document.getElementById('ip-device').value.trim(), mac: document.getElementById('ip-mac').value.trim(), department: document.getElementById('ip-dept').value.trim(), notes: document.getElementById('ip-notes').value.trim() };
+  toast('Saving...'); await DB.saveIP(ipCurrentLocation, item);
+  ipCloseModal(); toast('IP saved!'); ipRender(ipCurrentLocation);
+}
+
+async function ipDelete(id) {
+  if (!confirm('Delete this IP assignment?')) return;
+  await DB.deleteIP(id); toast('IP deleted'); ipRender(ipCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
+// SYSTEMS ACCESS MODULE — Supabase version
+// ============================================================
+let sysCurrentLocation = '';
+let sysEditId = null;
+let sysType = 'rdp';
+
+async function systemsRender(location) {
+  sysCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const rdpList = await DB.getRDP(location);
+  const erpList = await DB.getERP(location);
+  if (el) el.innerHTML = systemsHTML(location, rdpList, erpList) + sysModal();
+}
+
+function systemsHTML(location, rdpList, erpList) {
+  return `<div>
+    <div class="section-header">
+      <div><div class="section-title">🖥️ Systems Access</div><div class="section-subtitle">${location} — RDP & ERP Credentials</div></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">RDP Accounts</div><div class="stat-value" style="color:var(--accent2)">${rdpList.length}</div></div>
+      <div class="stat-card"><div class="stat-label">ERP Accounts</div><div class="stat-value" style="color:var(--warning)">${erpList.length}</div></div>
+    </div>
+
+    <div class="card" style="padding:0;margin-bottom:20px;">
+      <div style="background:var(--surface2);padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-weight:700;font-size:15px;">🖥️ RDP (Remote Desktop) Accounts</div>
+        <button class="btn btn-secondary" onclick="sysOpenAdd('rdp')">+ Add RDP</button>
+      </div>
+      <div class="bulk-bar" id="rdp-bulk-bar">
+        <span class="bulk-bar-count" id="rdp-bulk-count">0 selected</span>
+        <span class="bulk-bar-info">RDP accounts</span>
+        <button class="btn-bulk-cancel" onclick="rdpBulkCancel()">✕ Cancel</button>
+        <button class="btn-bulk-delete" onclick="rdpBulkDelete()">🗑 Delete Selected</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="rdp-check-all" onchange="rdpToggleAll(this)"/></th><th>Label</th><th>Computer Name</th><th>IP Address</th><th>Username</th><th>Password</th><th>Port</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody>${rdpList.length===0?`<tr><td colspan="9"><div class="empty-state" style="padding:24px;"><div class="icon">🖥️</div><h3>No RDP accounts yet</h3></div></td></tr>`:
+          rdpList.map(r=>`<tr>
+            <td class="cb-col"><input type="checkbox" class="row-checkbox rdp-row-cb" data-id="${r.id}" onchange="rdpRowCheck()"/></td>
+            <td><strong>${r.label}</strong></td>
+            <td>${r.computerName||'—'}</td>
+            <td style="font-family:monospace;font-size:12px;">${r.ipAddress||'—'}</td>
+            <td style="font-family:monospace;">${r.username}</td>
+            <td><div style="display:flex;align-items:center;gap:6px;">
+              <span id="rdp-pw-${r.id}" style="font-family:monospace;filter:blur(4px);">${'•'.repeat((r.password||'').length||8)}</span>
+              <button class="btn btn-small btn-secondary" onclick="sysTogglePw('rdp-pw-${r.id}','${r.password}')" style="padding:2px 8px;font-size:11px;">👁</button>
+              <button class="btn btn-small btn-secondary" onclick="sysCopy('${r.password}')" style="padding:2px 8px;font-size:11px;">📋</button>
+            </div></td>
+            <td>${r.port||'3389'}</td>
+            <td style="font-size:12px;color:var(--text2);">${r.notes||'—'}</td>
+            <td class="action-btns">
+              <button class="btn btn-small btn-secondary" onclick="sysOpenEdit('rdp','${r.id}')">Edit</button>
+              <button class="btn btn-small btn-danger" onclick="sysDelete('rdp','${r.id}')">Del</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" style="padding:0;">
+      <div style="background:var(--surface2);padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-weight:700;font-size:15px;">📊 ERP Accounts</div>
+        <button class="btn btn-secondary" onclick="sysOpenAdd('erp')">+ Add ERP</button>
+      </div>
+      <div class="bulk-bar" id="erp-bulk-bar">
+        <span class="bulk-bar-count" id="erp-bulk-count">0 selected</span>
+        <span class="bulk-bar-info">ERP accounts</span>
+        <button class="btn-bulk-cancel" onclick="erpBulkCancel()">✕ Cancel</button>
+        <button class="btn-bulk-delete" onclick="erpBulkDelete()">🗑 Delete Selected</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th class="cb-col"><input type="checkbox" class="row-checkbox" id="erp-check-all" onchange="erpToggleAll(this)"/></th><th>Employee</th><th>Department</th><th>ERP System</th><th>Username</th><th>Password</th><th>Access Level</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody>${erpList.length===0?`<tr><td colspan="9"><div class="empty-state" style="padding:24px;"><div class="icon">📊</div><h3>No ERP accounts yet</h3></div></td></tr>`:
+          erpList.map(e=>`<tr>
+            <td class="cb-col"><input type="checkbox" class="row-checkbox erp-row-cb" data-id="${e.id}" onchange="erpRowCheck()"/></td>
+            <td><strong>${e.employee}</strong></td>
+            <td>${e.department||'—'}</td>
+            <td><span class="badge badge-blue">${e.erpSystem||'—'}</span></td>
+            <td style="font-family:monospace;">${e.username}</td>
+            <td><div style="display:flex;align-items:center;gap:6px;">
+              <span id="erp-pw-${e.id}" style="font-family:monospace;filter:blur(4px);">${'•'.repeat((e.password||'').length||8)}</span>
+              <button class="btn btn-small btn-secondary" onclick="sysTogglePw('erp-pw-${e.id}','${e.password}')" style="padding:2px 8px;font-size:11px;">👁</button>
+              <button class="btn btn-small btn-secondary" onclick="sysCopy('${e.password}')" style="padding:2px 8px;font-size:11px;">📋</button>
+            </div></td>
+            <td><span class="badge ${e.accessLevel==='Admin'?'badge-red':e.accessLevel==='Manager'?'badge-yellow':'badge-green'}">${e.accessLevel||'User'}</span></td>
+            <td style="font-size:12px;color:var(--text2);">${e.notes||'—'}</td>
+            <td class="action-btns">
+              <button class="btn btn-small btn-secondary" onclick="sysOpenEdit('erp','${e.id}')">Edit</button>
+              <button class="btn btn-small btn-danger" onclick="sysDelete('erp','${e.id}')">Del</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+
+// ---- BULK DELETE RDP ----
+function rdpRowCheck() {
+  const cbs = document.querySelectorAll('.rdp-row-cb');
+  const checked = document.querySelectorAll('.rdp-row-cb:checked');
+  document.getElementById('rdp-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('rdp-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('rdp-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('rdp-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function rdpToggleAll(cb) { document.querySelectorAll('.rdp-row-cb').forEach(c => c.checked = cb.checked); rdpRowCheck(); }
+function rdpBulkCancel() {
+  document.querySelectorAll('.rdp-row-cb').forEach(c => c.checked = false);
+  document.getElementById('rdp-check-all').checked = false;
+  document.getElementById('rdp-bulk-bar').classList.remove('visible');
+}
+async function rdpBulkDelete() {
+  const ids = [...document.querySelectorAll('.rdp-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} RDP account(s)?`)) return;
+  for (const id of ids) await DB.deleteRDP(id);
+  toast(`🗑 ${ids.length} RDP account(s) deleted`);
+  systemsRender(sysCurrentLocation);
+}
+// ---- BULK DELETE ERP ----
+function erpRowCheck() {
+  const cbs = document.querySelectorAll('.erp-row-cb');
+  const checked = document.querySelectorAll('.erp-row-cb:checked');
+  document.getElementById('erp-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('erp-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('erp-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('erp-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function erpToggleAll(cb) { document.querySelectorAll('.erp-row-cb').forEach(c => c.checked = cb.checked); erpRowCheck(); }
+function erpBulkCancel() {
+  document.querySelectorAll('.erp-row-cb').forEach(c => c.checked = false);
+  document.getElementById('erp-check-all').checked = false;
+  document.getElementById('erp-bulk-bar').classList.remove('visible');
+}
+async function erpBulkDelete() {
+  const ids = [...document.querySelectorAll('.erp-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} ERP account(s)?`)) return;
+  for (const id of ids) await DB.deleteERP(id);
+  toast(`🗑 ${ids.length} ERP account(s) deleted`);
+  systemsRender(sysCurrentLocation);
+}
+
+function sysTogglePw(elId, pw) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (el.style.filter === 'none') { el.style.filter='blur(4px)'; el.textContent='•'.repeat((pw||'').length||8); }
+  else { el.style.filter='none'; el.textContent=pw; }
+}
+
+function sysCopy(text) { navigator.clipboard.writeText(text).then(() => toast('Password copied!')); }
+
+function sysModal() {
+  return `<div id="sys-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title" id="sys-modal-title">Add Account</div><button class="btn-close" onclick="sysCloseModal()">×</button></div>
+      <div class="modal-body">
+        <div id="sys-rdp-fields"><div class="form-grid">
+          <div class="form-group"><label>Label / Employee Name</label><input id="sys-label" type="text" placeholder="Server Room PC, John's PC..."/></div>
+          <div class="form-group"><label>Computer / Server Name</label><input id="sys-computer" type="text"/></div>
+          <div class="form-group"><label>IP Address</label><input id="sys-ip" type="text" placeholder="192.168.1.x"/></div>
+          <div class="form-group"><label>RDP Port</label><input id="sys-port" type="text" value="3389"/></div>
+          <div class="form-group"><label>Username</label><input id="sys-username" type="text"/></div>
+          <div class="form-group"><label>Password</label><input id="sys-password" type="text"/></div>
+          <div class="form-group span2"><label>Notes</label><input id="sys-notes" type="text"/></div>
+        </div></div>
+        <div id="sys-erp-fields" style="display:none;"><div class="form-grid">
+          <div class="form-group"><label>Employee Name</label><input id="erp-employee" type="text"/></div>
+          <div class="form-group"><label>Department</label><input id="erp-dept" type="text"/></div>
+          <div class="form-group"><label>ERP System Name</label><input id="erp-system" type="text" placeholder="SAP, Oracle, Tally..."/></div>
+          <div class="form-group"><label>Access Level</label><select id="erp-access"><option value="User">User</option><option value="Manager">Manager</option><option value="Admin">Admin</option><option value="View Only">View Only</option></select></div>
+          <div class="form-group"><label>Username / User ID</label><input id="erp-username" type="text"/></div>
+          <div class="form-group"><label>Password</label><input id="erp-password" type="text"/></div>
+          <div class="form-group span2"><label>Notes</label><input id="erp-notes" type="text"/></div>
+        </div></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="sysCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="sysSave()" style="width:auto">Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function sysOpenAdd(type) {
+  sysEditId = null; sysType = type;
+  document.getElementById('sys-modal-title').textContent = type==='rdp' ? 'Add RDP Account' : 'Add ERP Account';
+  document.getElementById('sys-rdp-fields').style.display = type==='rdp' ? 'block' : 'none';
+  document.getElementById('sys-erp-fields').style.display = type==='erp' ? 'block' : 'none';
+  ['sys-label','sys-computer','sys-ip','sys-username','sys-password','sys-notes','erp-employee','erp-dept','erp-system','erp-username','erp-password','erp-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('sys-port').value = '3389';
+  document.getElementById('sys-modal').style.display = 'flex';
+}
+
+async function sysOpenEdit(type, id) {
+  sysType = type; sysEditId = id;
+  const list = type==='rdp' ? await DB.getRDP(sysCurrentLocation) : await DB.getERP(sysCurrentLocation);
+  const item = list.find(x => x.id === id);
+  if (!item) return;
+  document.getElementById('sys-modal-title').textContent = type==='rdp' ? 'Edit RDP Account' : 'Edit ERP Account';
+  document.getElementById('sys-rdp-fields').style.display = type==='rdp' ? 'block' : 'none';
+  document.getElementById('sys-erp-fields').style.display = type==='erp' ? 'block' : 'none';
+  if (type==='rdp') {
+    document.getElementById('sys-label').value = item.label||'';
+    document.getElementById('sys-computer').value = item.computerName||'';
+    document.getElementById('sys-ip').value = item.ipAddress||'';
+    document.getElementById('sys-port').value = item.port||'3389';
+    document.getElementById('sys-username').value = item.username||'';
+    document.getElementById('sys-password').value = item.password||'';
+    document.getElementById('sys-notes').value = item.notes||'';
+  } else {
+    document.getElementById('erp-employee').value = item.employee||'';
+    document.getElementById('erp-dept').value = item.department||'';
+    document.getElementById('erp-system').value = item.erpSystem||'';
+    document.getElementById('erp-access').value = item.accessLevel||'User';
+    document.getElementById('erp-username').value = item.username||'';
+    document.getElementById('erp-password').value = item.password||'';
+    document.getElementById('erp-notes').value = item.notes||'';
+  }
+  document.getElementById('sys-modal').style.display = 'flex';
+}
+
+function sysCloseModal() { document.getElementById('sys-modal').style.display='none'; }
+
+async function sysSave() {
+  let item = {};
+  if (sysType==='rdp') {
+    const label = document.getElementById('sys-label').value.trim();
+    if (!label) { toast('Label is required','error'); return; }
+    item = { id: sysEditId||genId(), label, computerName: document.getElementById('sys-computer').value.trim(), ipAddress: document.getElementById('sys-ip').value.trim(), port: document.getElementById('sys-port').value.trim()||'3389', username: document.getElementById('sys-username').value.trim(), password: document.getElementById('sys-password').value.trim(), notes: document.getElementById('sys-notes').value.trim() };
+    toast('Saving...'); await DB.saveRDP(sysCurrentLocation, item);
+  } else {
+    const employee = document.getElementById('erp-employee').value.trim();
+    if (!employee) { toast('Employee name is required','error'); return; }
+    item = { id: sysEditId||genId(), employee, department: document.getElementById('erp-dept').value.trim(), erpSystem: document.getElementById('erp-system').value.trim(), accessLevel: document.getElementById('erp-access').value, username: document.getElementById('erp-username').value.trim(), password: document.getElementById('erp-password').value.trim(), notes: document.getElementById('erp-notes').value.trim() };
+    toast('Saving...'); await DB.saveERP(sysCurrentLocation, item);
+  }
+  sysCloseModal(); toast(`${sysType.toUpperCase()} account saved!`); systemsRender(sysCurrentLocation);
+}
+
+async function sysDelete(type, id) {
+  if (!confirm('Delete this account?')) return;
+  if (type==='rdp') await DB.deleteRDP(id); else await DB.deleteERP(id);
+  toast('Deleted'); systemsRender(sysCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
+// EMPLOYEES MODULE — with Employed / Resigned status
+// ============================================================
+
+let empCurrentLocation = '';
+let empEditId = null;
+let empStatusFilter = 'all'; // 'all' | 'employed' | 'resigned'
+let empDeptFilter = 'all';
+
+async function employeesRender(location) {
+  empCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const employees = await DB.getEmployees(location);
+  if (el) el.innerHTML = empHTML(location, employees) + empModal() + empInvModal();
+}
+
+function empHTML(location, employees) {
+  const employed = employees.filter(e => (e.status || 'employed') === 'employed');
+  const resigned = employees.filter(e => e.status === 'resigned');
+  const depts = [...new Set(employees.map(e => e.department).filter(Boolean))].sort();
+  const byDept = {};
+  depts.forEach(d => byDept[d] = employees.filter(e => e.department === d));
+
+  return `<div>
+    <div class="section-header">
+      <div>
+        <div class="section-title">👥 Employees</div>
+        <div class="section-subtitle">${location} — ${employees.length} employee(s)</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input id="emp-search" type="text" placeholder="Search name, department..." oninput="empApplyFilters()"/>
+        </div>
+        <label class="btn btn-import" style="cursor:pointer;">
+          📥 Import Excel
+          <input type="file" id="emp-excel-input" accept=".xlsx,.xls" style="display:none;" onchange="empImportExcel(this)"/>
+        </label>
+        <button class="btn btn-secondary" onclick="empOpenAdd()">+ Add Employee</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${employees.length}</div></div>
+      <div class="stat-card" style="cursor:pointer;" onclick="empSetStatus('employed')">
+        <div class="stat-label">✅ Employed</div>
+        <div class="stat-value" style="color:var(--accent)">${employed.length}</div>
+      </div>
+      <div class="stat-card" style="cursor:pointer;" onclick="empSetStatus('resigned')">
+        <div class="stat-label">🚪 Resigned</div>
+        <div class="stat-value" style="color:var(--danger)">${resigned.length}</div>
+      </div>
+      <div class="stat-card"><div class="stat-label">Departments</div><div class="stat-value" style="color:var(--accent2)">${depts.length}</div></div>
+    </div>
+
+    <!-- Status filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:13px;color:var(--text2);margin-right:4px;">Status:</span>
+      <button class="filter-btn ${empStatusFilter==='all'?'active':''}" onclick="empSetStatus('all')">All <span style="background:var(--surface3);border-radius:8px;padding:0 6px;font-size:11px;">${employees.length}</span></button>
+      <button class="filter-btn ${empStatusFilter==='employed'?'active':''}" id="sf-employed" onclick="empSetStatus('employed')" style="${empStatusFilter==='employed'?'background:#10b981;border-color:#10b981;color:#fff;':''}">✅ Employed <span style="background:rgba(255,255,255,0.2);border-radius:8px;padding:0 6px;font-size:11px;">${employed.length}</span></button>
+      <button class="filter-btn ${empStatusFilter==='resigned'?'active':''}" id="sf-resigned" onclick="empSetStatus('resigned')" style="${empStatusFilter==='resigned'?'background:#ef4444;border-color:#ef4444;color:#fff;':''}">🚪 Resigned <span style="background:rgba(255,255,255,0.2);border-radius:8px;padding:0 6px;font-size:11px;">${resigned.length}</span></button>
+    </div>
+
+    <!-- Dept filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:13px;color:var(--text2);margin-right:4px;">Dept:</span>
+      <button class="filter-btn ${empDeptFilter==='all'?'active':''}" onclick="empSetDept('all',this)">All</button>
+      ${depts.map(d => `<button class="filter-btn ${empDeptFilter===d?'active':''}" onclick="empSetDept('${d}',this)">${d} <span style="background:var(--surface3);border-radius:8px;padding:0 6px;font-size:11px;">${byDept[d].length}</span></button>`).join('')}
+    </div>
+
+    <div class="bulk-bar" id="emp-bulk-bar">
+      <span class="bulk-bar-count" id="emp-bulk-count">0 selected</span>
+      <span class="bulk-bar-info">employees</span>
+      <button class="btn-bulk-cancel" onclick="empBulkCancel()">✕ Cancel</button>
+      <button class="btn-bulk-delete" onclick="empBulkDelete()">🗑 Delete Selected</button>
+    </div>
+    <div class="card" style="padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="cb-col"><input type="checkbox" class="row-checkbox" id="emp-check-all" onchange="empToggleAll(this)"/></th>
+              <th>#</th>
+              <th>Name</th>
+              <th>Location</th>
+              <th>Department</th>
+              <th>Designation</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="emp-tbody">
+            ${empRows(employees)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Import progress overlay -->
+    <div id="emp-import-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;text-align:center;min-width:320px;">
+        <div style="font-size:40px;margin-bottom:16px;">📥</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Importing Employees...</div>
+        <div id="emp-import-status" style="color:var(--text2);font-size:14px;margin-bottom:20px;">Reading file...</div>
+        <div style="background:var(--surface2);border-radius:8px;height:8px;overflow:hidden;">
+          <div id="emp-import-bar" style="background:var(--accent);height:100%;width:0%;transition:width 0.3s;"></div>
+        </div>
+        <div id="emp-import-count" style="margin-top:12px;font-size:13px;color:var(--text2);">0 / 0</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function empRows(employees) {
+  // Apply current filters
+  let filtered = employees;
+  const q = document.getElementById('emp-search') ? document.getElementById('emp-search').value.toLowerCase() : '';
+  if (q) filtered = filtered.filter(e => e.name.toLowerCase().includes(q) || (e.department||'').toLowerCase().includes(q) || (e.designation||'').toLowerCase().includes(q));
+  if (empStatusFilter !== 'all') filtered = filtered.filter(e => (e.status||'employed') === empStatusFilter);
+  if (empDeptFilter !== 'all') filtered = filtered.filter(e => e.department === empDeptFilter);
+
+  if (filtered.length === 0) return `<tr><td colspan="8"><div class="empty-state" style="padding:32px;"><div class="icon">👥</div><h3>No employees found</h3></div></td></tr>`;
+
+  return filtered.map((e, i) => {
+    const status = e.status || 'employed';
+    const isResigned = status === 'resigned';
+    return `<tr data-dept="${e.department||''}" data-status="${status}" style="${isResigned?'opacity:0.55;':''}">
+      <td class="cb-col"><input type="checkbox" class="row-checkbox emp-row-cb" data-id="${e.id}" onchange="empRowCheck()"/></td>
+      <td style="color:var(--text2);font-size:13px;">${i+1}</td>
+      <td><strong style="${isResigned?'text-decoration:line-through;':''} cursor:pointer;color:var(--accent2);" onclick="empViewInventory('${e.name.replace(/'/g,'&#39;')}','${e.id}')" title="View IT Inventory">${e.name} <span style="font-size:10px;opacity:0.6;">💻</span></strong></td>
+      <td><span class="badge badge-blue" style="font-size:11px;">${e.location||empCurrentLocation}</span></td>
+      <td><span class="dept-pill">${e.department||'—'}</span></td>
+      <td style="font-size:13px;">${e.designation||'—'}</td>
+      <td>
+        <span class="status-badge ${isResigned?'status-resigned':'status-employed'}" onclick="empToggleStatus('${e.id}','${status}')" title="Click to change status" style="cursor:pointer;">
+          ${isResigned?'🚪 Resigned':'✅ Employed'}
+        </span>
+      </td>
+      <td class="action-btns">
+        <button class="btn btn-small btn-secondary" onclick="empOpenEdit('${e.id}')">Edit</button>
+        <button class="btn btn-small btn-danger" onclick="empDelete('${e.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+
+// ---- BULK DELETE ----
+function empRowCheck() {
+  const cbs = document.querySelectorAll('.emp-row-cb');
+  const checked = document.querySelectorAll('.emp-row-cb:checked');
+  document.getElementById('emp-bulk-bar').classList.toggle('visible', checked.length > 0);
+  document.getElementById('emp-bulk-count').textContent = checked.length + ' selected';
+  document.getElementById('emp-check-all').indeterminate = checked.length > 0 && checked.length < cbs.length;
+  document.getElementById('emp-check-all').checked = checked.length === cbs.length && cbs.length > 0;
+}
+function empToggleAll(cb) {
+  document.querySelectorAll('.emp-row-cb').forEach(c => c.checked = cb.checked);
+  empRowCheck();
+}
+function empBulkCancel() {
+  document.querySelectorAll('.emp-row-cb').forEach(c => c.checked = false);
+  document.getElementById('emp-check-all').checked = false;
+  document.getElementById('emp-bulk-bar').classList.remove('visible');
+}
+async function empBulkDelete() {
+  const ids = [...document.querySelectorAll('.emp-row-cb:checked')].map(c => c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`Delete ${ids.length} selected employee(s)?`)) return;
+  toast('Deleting...');
+  for (const id of ids) await DB.deleteEmployee(id);
+  toast(`🗑 ${ids.length} employee(s) deleted`);
+  employeesRender(empCurrentLocation);
+}
+
+// ---- FILTER FUNCTIONS ----
+function empSetStatus(status) {
+  empStatusFilter = status;
+  empRefreshRows();
+}
+
+function empSetDept(dept, btn) {
+  empDeptFilter = dept;
+  empRefreshRows();
+}
+
+async function empRefreshRows() {
+  const employees = await DB.getEmployees(empCurrentLocation);
+  document.getElementById('emp-tbody').innerHTML = empRows(employees);
+}
+
+async function empApplyFilters() {
+  empRefreshRows();
+}
+
+// ---- TOGGLE STATUS (quick click) ----
+async function empToggleStatus(id, currentStatus) {
+  const newStatus = currentStatus === 'employed' ? 'resigned' : 'employed';
+  const label = newStatus === 'resigned' ? 'Mark as Resigned?' : 'Mark as Employed?';
+  if (!confirm(label)) return;
+  const employees = await DB.getEmployees(empCurrentLocation);
+  const emp = employees.find(e => e.id === id);
+  if (!emp) return;
+  emp.status = newStatus;
+  await DB.saveEmployee(empCurrentLocation, emp);
+  toast(newStatus === 'resigned' ? '🚪 Marked as Resigned' : '✅ Marked as Employed');
+  employeesRender(empCurrentLocation);
+}
+
+// ---- EXCEL IMPORT ----
+async function empImportExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const overlay = document.getElementById('emp-import-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('emp-import-status').textContent = 'Reading Excel file...';
+  document.getElementById('emp-import-bar').style.width = '5%';
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'arraybuffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const toImport = rows.filter(r => {
+      const loc = (r['Location'] || r['location'] || '').toString().trim();
+      return loc === '' || loc.toLowerCase() === empCurrentLocation.toLowerCase();
+    });
+    if (toImport.length === 0) {
+      overlay.style.display = 'none';
+      toast(`No rows found for ${empCurrentLocation}.`, 'error');
+      input.value = ''; return;
+    }
+    document.getElementById('emp-import-status').textContent = 'Checking for duplicates...';
+    document.getElementById('emp-import-count').textContent = `0 / ${toImport.length}`;
+    const existing = await DB.getEmployees(empCurrentLocation);
+    const existingNames = new Set(existing.map(e => e.name.trim().toLowerCase()));
+    let saved = 0, skipped = 0;
+    for (const row of toImport) {
+      const name = (row['Name'] || row['name'] || '').toString().trim();
+      if (!name) continue;
+      if (existingNames.has(name.toLowerCase())) {
+        skipped++;
+        const pct = Math.round(((saved+skipped)/toImport.length)*100);
+        document.getElementById('emp-import-bar').style.width = pct+'%';
+        document.getElementById('emp-import-count').textContent = `${saved+skipped} / ${toImport.length}`;
+        document.getElementById('emp-import-status').textContent = `⏭ Skipped: ${name}`;
+        continue;
+      }
+      const emp = {
+        id: genId(), name,
+        location: (row['Location']||row['location']||empCurrentLocation).toString().trim(),
+        department: (row['Department']||row['department']||'').toString().trim(),
+        designation: (row['Designation']||row['designation']||'').toString().trim(),
+        status: 'employed'
+      };
+      await DB.saveEmployee(empCurrentLocation, emp);
+      existingNames.add(name.toLowerCase());
+      saved++;
+      const pct = Math.round(((saved+skipped)/toImport.length)*100);
+      document.getElementById('emp-import-bar').style.width = pct+'%';
+      document.getElementById('emp-import-count').textContent = `${saved+skipped} / ${toImport.length}`;
+      document.getElementById('emp-import-status').textContent = `✅ Saving: ${emp.name}`;
+    }
+    overlay.style.display = 'none';
+    toast(skipped > 0 ? `✅ ${saved} imported, ${skipped} skipped (duplicates)` : `✅ ${saved} employees imported!`);
+    input.value = '';
+    employeesRender(empCurrentLocation);
+  } catch (err) {
+    overlay.style.display = 'none';
+    toast('Error: ' + err.message, 'error');
+    input.value = '';
+  }
+}
+
+// ---- MODAL ----
+
+// ======================================================
+// EMPLOYEE -> IT INVENTORY VIEWER
+// ======================================================
+function empInvModal() {
+  return '<div id="emp-inv-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">'
+    + '<div class="modal-box" style="max-width:860px;width:95%;max-height:88vh;overflow-y:auto;">'
+    + '<div class="modal-header">'
+    + '<div class="modal-title" id="emp-inv-modal-title">💻 IT Inventory</div>'
+    + '<button class="btn-close" onclick="empCloseInvModal()">×</button>'
+    + '</div><div id="emp-inv-modal-body" style="padding:20px;">'
+    + '<div style="text-align:center;padding:32px;color:var(--text2);">⏳ Loading...</div>'
+    + '</div></div></div>';
+}
+
+async function empViewInventory(name, empId) {
+  const modal = document.getElementById('emp-inv-modal');
+  modal.style.display = 'flex';
+  document.getElementById('emp-inv-modal-title').textContent = '💻 ' + name + ' — IT Inventory';
+  document.getElementById('emp-inv-modal-body').innerHTML = '<div style="text-align:center;padding:32px;color:var(--text2);">⏳ Loading...</div>';
+
+  const allInv = await DB.getInventory(empCurrentLocation);
+  const nameLower = name.toLowerCase().trim();
+  const items = allInv.filter(function(i) {
+    const n = (i.employee||'').toLowerCase().trim();
+    if (n === nameLower) return true;
+    const firstName = nameLower.split(' ')[0];
+    return n.split(' ')[0] === firstName && firstName.length > 2;
+  });
+
+  const body = document.getElementById('emp-inv-modal-body');
+  if (!items.length) {
+    body.innerHTML = '<div style="text-align:center;padding:40px;">'
+      + '<div style="font-size:48px;margin-bottom:12px;">📭</div>'
+      + '<div style="color:var(--text2);font-size:15px;">No IT inventory found for <strong style="color:var(--text)">' + name + '</strong></div>'
+      + '<div style="color:var(--text2);font-size:13px;margin-top:8px;">Go to IT Inventory tab to add a device for this employee.</div>'
+      + '</div>';
+    return;
+  }
+
+  body.innerHTML = items.map(function(item) {
+    const isPC = item.deviceType === 'PC';
+    const storage = (item.storageType||'') + ' ' + (item.storageSize||'') + 'GB' + (item.extraHdd ? '+HDD' : '');
+    const typeColor = isPC ? '#a855f7' : '#38bdf8';
+    const typeBg = isPC ? 'rgba(168,85,247,0.15)' : 'rgba(56,189,248,0.15)';
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px;">'
+      + '<div><span style="font-size:18px;">' + (isPC ? '🖥️' : '💻') + '</span>'
+      + '<strong style="font-size:16px;margin-left:6px;">' + (item.brand||'') + ' ' + (item.model||'') + '</strong>'
+      + '<span style="margin-left:10px;background:' + typeBg + ';color:' + typeColor + ';padding:2px 10px;border-radius:20px;font-size:12px;">' + item.deviceType + '</span></div>'
+      + (item.serialNumber ? '<span style="font-family:monospace;font-size:13px;color:var(--text2);">SN: ' + item.serialNumber + '</span>' : '')
+      + '</div>'
+      + (item.description ? '<div style="color:var(--text2);font-size:13px;margin-bottom:10px;">📄 ' + item.description + '</div>' : '')
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">'
+      + (item.ram ? empInvChip('🧠 RAM', item.ram + 'GB') : '')
+      + (storage.trim() ? empInvChip('💾 Storage', storage) : '')
+      + (item.mouse ? empInvChip('🖱️ Mouse', (item.mouse==='Yes'||item.mouse===true) ? 'Yes' : 'No') : '')
+      + (isPC && item.keyboard ? empInvChip('⌨️ Keyboard', item.keyboard) : '')
+      + (isPC && item.monitorBrand ? empInvChip('🖥️ Monitor', item.monitorBrand + (item.monitorModel ? ' ' + item.monitorModel : '')) : '')
+      + (isPC && item.upsBrand ? empInvChip('🔋 UPS', item.upsBrand + (item.upsModel ? ' ' + item.upsModel : '') + (item.upsSize ? ' (' + item.upsSize + ')' : '')) : '')
+      + (item.vga && item.vga !== 'No' ? empInvChip('🎮 VGA', item.vgaModel || 'Yes') : '')
+      + '</div>'
+      + (item.notes ? '<div style="margin-top:10px;color:var(--text2);font-size:12px;font-style:italic;">📝 ' + item.notes + '</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function empInvChip(label, value) {
+  if (!value || value === 'No' || value === 'false') return '';
+  return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;">'
+    + '<div style="font-size:11px;color:var(--text2);">' + label + '</div>'
+    + '<div style="font-size:13px;font-weight:600;margin-top:2px;">' + value + '</div>'
+    + '</div>';
+}
+
+
+function empCloseInvModal() { document.getElementById("emp-inv-modal").style.display="none"; }
+
+function empModal() {
+  return `<div id="emp-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="emp-modal-title">Add Employee</div>
+        <button class="btn-close" onclick="empCloseModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group span2">
+            <label>Full Name</label>
+            <input id="emp-name" type="text" placeholder="Employee full name"/>
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input id="emp-location" type="text" readonly style="opacity:0.7;"/>
+          </div>
+          <div class="form-group">
+            <label>Department</label>
+            <input id="emp-dept" type="text" placeholder="Finance, HR, IT..."/>
+          </div>
+          <div class="form-group span2">
+            <label>Designation</label>
+            <input id="emp-designation" type="text" placeholder="Job title / designation"/>
+          </div>
+          <div class="form-group span2">
+            <label>Employment Status</label>
+            <div style="display:flex;gap:12px;margin-top:6px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border-radius:8px;border:2px solid var(--border);flex:1;justify-content:center;transition:all 0.2s;" id="status-employed-label">
+                <input type="radio" name="emp-status" id="emp-status-employed" value="employed" checked onchange="empStatusRadioChange()" style="display:none;"/>
+                <span>✅ Employed</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border-radius:8px;border:2px solid var(--border);flex:1;justify-content:center;transition:all 0.2s;" id="status-resigned-label">
+                <input type="radio" name="emp-status" id="emp-status-resigned" value="resigned" onchange="empStatusRadioChange()" style="display:none;"/>
+                <span>🚪 Resigned</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="empCloseModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="empSave()" style="width:auto">Save Employee</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function empStatusRadioChange() {
+  const employed = document.getElementById('emp-status-employed').checked;
+  document.getElementById('status-employed-label').style.borderColor = employed ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('status-employed-label').style.background = employed ? 'rgba(0,255,163,0.08)' : '';
+  document.getElementById('status-resigned-label').style.borderColor = !employed ? '#ef4444' : 'var(--border)';
+  document.getElementById('status-resigned-label').style.background = !employed ? 'rgba(239,68,68,0.08)' : '';
+}
+
+function empOpenAdd() {
+  empEditId = null;
+  document.getElementById('emp-modal-title').textContent = 'Add Employee';
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-dept').value = '';
+  document.getElementById('emp-designation').value = '';
+  document.getElementById('emp-location').value = empCurrentLocation;
+  document.getElementById('emp-status-employed').checked = true;
+  empStatusRadioChange();
+  document.getElementById('emp-modal').style.display = 'flex';
+}
+
+async function empOpenEdit(id) {
+  const employees = await DB.getEmployees(empCurrentLocation);
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  empEditId = id;
+  document.getElementById('emp-modal-title').textContent = 'Edit Employee';
+  document.getElementById('emp-name').value = e.name || '';
+  document.getElementById('emp-dept').value = e.department || '';
+  document.getElementById('emp-designation').value = e.designation || '';
+  document.getElementById('emp-location').value = e.location || empCurrentLocation;
+  const isResigned = e.status === 'resigned';
+  document.getElementById('emp-status-employed').checked = !isResigned;
+  document.getElementById('emp-status-resigned').checked = isResigned;
+  empStatusRadioChange();
+  document.getElementById('emp-modal').style.display = 'flex';
+}
+
+function empCloseModal() { document.getElementById('emp-modal').style.display = 'none'; }
+
+async function empSave() {
+  const name = document.getElementById('emp-name').value.trim();
+  if (!name) { toast('Name is required', 'error'); return; }
+  const emp = {
+    id: empEditId || genId(),
+    name,
+    location: empCurrentLocation,
+    department: document.getElementById('emp-dept').value.trim(),
+    designation: document.getElementById('emp-designation').value.trim(),
+    status: document.getElementById('emp-status-resigned').checked ? 'resigned' : 'employed'
+  };
+  toast('Saving...');
+  await DB.saveEmployee(empCurrentLocation, emp);
+  empCloseModal();
+  toast('Employee saved!');
+  employeesRender(empCurrentLocation);
+}
+
+async function empDelete(id) {
+  if (!confirm('Delete this employee?')) return;
+  await DB.deleteEmployee(id);
+  toast('Employee deleted');
+  employeesRender(empCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
+// MAIN APP CONTROLLER
+// ============================================================
+
+let currentLocation = LOCATIONS[0];
+let currentModule = MODULES[0].id;
+
+function appInit() { renderApp(); }
+
+function renderApp() {
+  const app = document.getElementById('main-app');
+  app.innerHTML = `
+    <div class="app-header">
+      <div class="header-left">
+        <div class="header-brand">POLYDIME IT</div>
+        <div class="header-divider"></div>
+        <div class="location-badge">${currentLocation}</div>
+      </div>
+      <div class="header-right">
+        <span class="user-info" id="user-display"></span>
+        <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+      </div>
+    </div>
+    <div class="location-tabs">
+      ${LOCATIONS.map(loc=>`<div class="loc-tab ${loc===currentLocation?'active':''}" onclick="switchLocation('${loc}')">${loc}</div>`).join('')}
+    </div>
+    <div class="module-nav">
+      ${MODULES.map(m=>`<div class="mod-tab ${m.id===currentModule?'active':''}" data-module="${m.id}" onclick="switchModule('${m.id}')">${m.icon} ${m.label}</div>`).join('')}
+    </div>
+    <div class="content-area" id="module-content"></div>
+  `;
+  const ud = document.getElementById('user-display');
+  if (ud) ud.textContent = currentUser ? currentUser.name : '';
+  renderCurrentModule();
+}
+
+function renderCurrentModule() {
+  const el = document.getElementById('module-content');
+  if (!el) return;
+  switch(currentModule) {
+    case 'wifi':      wifiRender(currentLocation); break;
+    case 'inventory': inventoryRender(currentLocation); break;
+    case 'printers':  printersRender(currentLocation); break;
+    case 'mobiles':   mobilesRender(currentLocation); break;
+    case 'ip':        ipRender(currentLocation); break;
+    case 'systems':   systemsRender(currentLocation); break;
+    case 'employees': employeesRender(currentLocation); break;
+  }
+}
+
+function switchLocation(loc) { currentLocation=loc; renderApp(); }
+
+function switchModule(mod) {
+  currentModule=mod;
+  document.querySelectorAll('.mod-tab').forEach(t=>t.classList.toggle('active',t.dataset.module===mod));
+  document.querySelectorAll('.loc-tab').forEach(t=>t.classList.toggle('active',t.textContent.trim()===currentLocation));
+  document.querySelector('.location-badge').textContent=currentLocation;
+  renderCurrentModule();
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('app').innerHTML=`${renderLogin()}<div id="main-app" style="display:none;"></div>`;
+  authInit();
+});
+
+</script>
 </body>
 </html>
