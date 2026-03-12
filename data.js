@@ -111,10 +111,10 @@ const DB = {
   // EMPLOYEES
   async getEmployees(location) {
     const rows = await sbFetch(`employees?location=eq.${encodeURIComponent(location)}&order=name.asc`);
-    return (rows||[]).map(r=>({id:r.id,name:r.name,location:r.location,department:r.department,designation:r.designation}));
+    return (rows||[]).map(r=>({id:r.id,name:r.name,location:r.location,department:r.department,designation:r.designation,status:r.status||'employed'}));
   },
   async saveEmployee(location,emp) {
-    await sbFetch('employees',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:emp.id,location,name:emp.name,department:emp.department,designation:emp.designation})});
+    await sbFetch('employees',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:emp.id,location,name:emp.name,department:emp.department,designation:emp.designation,status:emp.status||'employed'})});
   },
   async deleteEmployee(id) { await sbFetch(`employees?id=eq.${id}`,{method:'DELETE'}); }
 };

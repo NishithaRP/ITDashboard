@@ -1,9 +1,11 @@
 // ============================================================
-// EMPLOYEES MODULE — Supabase version with Excel Import
+// EMPLOYEES MODULE — with Employed / Resigned status
 // ============================================================
 
 let empCurrentLocation = '';
 let empEditId = null;
+let empStatusFilter = 'all'; // 'all' | 'employed' | 'resigned'
+let empDeptFilter = 'all';
 
 async function employeesRender(location) {
   empCurrentLocation = location;
@@ -14,6 +16,8 @@ async function employeesRender(location) {
 }
 
 function empHTML(location, employees) {
+  const employed = employees.filter(e => (e.status || 'employed') === 'employed');
+  const resigned = employees.filter(e => e.status === 'resigned');
   const depts = [...new Set(employees.map(e => e.department).filter(Boolean))].sort();
   const byDept = {};
   depts.forEach(d => byDept[d] = employees.filter(e => e.department === d));
@@ -27,7 +31,7 @@ function empHTML(location, employees) {
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input id="emp-search" type="text" placeholder="Search name, department..." oninput="empFilter()"/>
+          <input id="emp-search" type="text" placeholder="Search name, department..." oninput="empApplyFilters()"/>
         </div>
         <label class="btn btn-import" style="cursor:pointer;">
           📥 Import Excel
@@ -37,17 +41,33 @@ function empHTML(location, employees) {
       </div>
     </div>
 
+    <!-- Stats -->
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-label">Total Employees</div><div class="stat-value">${employees.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${employees.length}</div></div>
+      <div class="stat-card" style="cursor:pointer;" onclick="empSetStatus('employed')">
+        <div class="stat-label">✅ Employed</div>
+        <div class="stat-value" style="color:var(--accent)">${employed.length}</div>
+      </div>
+      <div class="stat-card" style="cursor:pointer;" onclick="empSetStatus('resigned')">
+        <div class="stat-label">🚪 Resigned</div>
+        <div class="stat-value" style="color:var(--danger)">${resigned.length}</div>
+      </div>
       <div class="stat-card"><div class="stat-label">Departments</div><div class="stat-value" style="color:var(--accent2)">${depts.length}</div></div>
-      ${depts.slice(0,3).map(d => `<div class="stat-card"><div class="stat-label">${d}</div><div class="stat-value" style="color:var(--warning);font-size:20px;">${byDept[d].length}</div></div>`).join('')}
     </div>
 
-    <!-- Filter bar -->
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-      <span style="font-size:13px;color:var(--text2);">Filter:</span>
-      <button class="filter-btn active" onclick="empFilterDept('all',this)">All</button>
-      ${depts.map(d => `<button class="filter-btn" onclick="empFilterDept('${d}',this)">${d} <span style="background:var(--surface3);border-radius:8px;padding:0 6px;font-size:11px;">${byDept[d].length}</span></button>`).join('')}
+    <!-- Status filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:13px;color:var(--text2);margin-right:4px;">Status:</span>
+      <button class="filter-btn ${empStatusFilter==='all'?'active':''}" onclick="empSetStatus('all')">All <span style="background:var(--surface3);border-radius:8px;padding:0 6px;font-size:11px;">${employees.length}</span></button>
+      <button class="filter-btn ${empStatusFilter==='employed'?'active':''}" id="sf-employed" onclick="empSetStatus('employed')" style="${empStatusFilter==='employed'?'background:#10b981;border-color:#10b981;color:#fff;':''}">✅ Employed <span style="background:rgba(255,255,255,0.2);border-radius:8px;padding:0 6px;font-size:11px;">${employed.length}</span></button>
+      <button class="filter-btn ${empStatusFilter==='resigned'?'active':''}" id="sf-resigned" onclick="empSetStatus('resigned')" style="${empStatusFilter==='resigned'?'background:#ef4444;border-color:#ef4444;color:#fff;':''}">🚪 Resigned <span style="background:rgba(255,255,255,0.2);border-radius:8px;padding:0 6px;font-size:11px;">${resigned.length}</span></button>
+    </div>
+
+    <!-- Dept filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:13px;color:var(--text2);margin-right:4px;">Dept:</span>
+      <button class="filter-btn ${empDeptFilter==='all'?'active':''}" onclick="empSetDept('all',this)">All</button>
+      ${depts.map(d => `<button class="filter-btn ${empDeptFilter===d?'active':''}" onclick="empSetDept('${d}',this)">${d} <span style="background:var(--surface3);border-radius:8px;padding:0 6px;font-size:11px;">${byDept[d].length}</span></button>`).join('')}
     </div>
 
     <div class="card" style="padding:0;">
@@ -60,6 +80,7 @@ function empHTML(location, employees) {
               <th>Location</th>
               <th>Department</th>
               <th>Designation</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -86,123 +107,132 @@ function empHTML(location, employees) {
 }
 
 function empRows(employees) {
-  if (employees.length === 0) return `<tr><td colspan="6"><div class="empty-state"><div class="icon">👥</div><h3>No employees yet</h3><p>Add manually or import an Excel file</p></div></td></tr>`;
-  return employees.map((e, i) => `<tr data-dept="${e.department||''}">
-    <td style="color:var(--text2);font-size:13px;">${i+1}</td>
-    <td><strong>${e.name}</strong></td>
-    <td><span class="badge badge-blue" style="font-size:11px;">${e.location||empCurrentLocation}</span></td>
-    <td><span class="dept-pill">${e.department||'—'}</span></td>
-    <td style="font-size:13px;">${e.designation||'—'}</td>
-    <td class="action-btns">
-      <button class="btn btn-small btn-secondary" onclick="empOpenEdit('${e.id}')">Edit</button>
-      <button class="btn btn-small btn-danger" onclick="empDelete('${e.id}')">Del</button>
-    </td>
-  </tr>`).join('');
+  // Apply current filters
+  let filtered = employees;
+  const q = document.getElementById('emp-search') ? document.getElementById('emp-search').value.toLowerCase() : '';
+  if (q) filtered = filtered.filter(e => e.name.toLowerCase().includes(q) || (e.department||'').toLowerCase().includes(q) || (e.designation||'').toLowerCase().includes(q));
+  if (empStatusFilter !== 'all') filtered = filtered.filter(e => (e.status||'employed') === empStatusFilter);
+  if (empDeptFilter !== 'all') filtered = filtered.filter(e => e.department === empDeptFilter);
+
+  if (filtered.length === 0) return `<tr><td colspan="7"><div class="empty-state" style="padding:32px;"><div class="icon">👥</div><h3>No employees found</h3></div></td></tr>`;
+
+  return filtered.map((e, i) => {
+    const status = e.status || 'employed';
+    const isResigned = status === 'resigned';
+    return `<tr data-dept="${e.department||''}" data-status="${status}" style="${isResigned?'opacity:0.55;':''}">
+      <td style="color:var(--text2);font-size:13px;">${i+1}</td>
+      <td><strong style="${isResigned?'text-decoration:line-through;':''}">${e.name}</strong></td>
+      <td><span class="badge badge-blue" style="font-size:11px;">${e.location||empCurrentLocation}</span></td>
+      <td><span class="dept-pill">${e.department||'—'}</span></td>
+      <td style="font-size:13px;">${e.designation||'—'}</td>
+      <td>
+        <span class="status-badge ${isResigned?'status-resigned':'status-employed'}" onclick="empToggleStatus('${e.id}','${status}')" title="Click to change status" style="cursor:pointer;">
+          ${isResigned?'🚪 Resigned':'✅ Employed'}
+        </span>
+      </td>
+      <td class="action-btns">
+        <button class="btn btn-small btn-secondary" onclick="empOpenEdit('${e.id}')">Edit</button>
+        <button class="btn btn-small btn-danger" onclick="empDelete('${e.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
-async function empFilter() {
-  const q = document.getElementById('emp-search').value.toLowerCase();
-  const all = await DB.getEmployees(empCurrentLocation);
-  const filtered = all.filter(e =>
-    e.name.toLowerCase().includes(q) ||
-    (e.department||'').toLowerCase().includes(q) ||
-    (e.designation||'').toLowerCase().includes(q)
-  );
-  document.getElementById('emp-tbody').innerHTML = empRows(filtered);
+// ---- FILTER FUNCTIONS ----
+function empSetStatus(status) {
+  empStatusFilter = status;
+  empRefreshRows();
 }
 
-function empFilterDept(dept, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const rows = document.querySelectorAll('#emp-tbody tr[data-dept]');
-  rows.forEach(r => {
-    r.style.display = (dept === 'all' || r.dataset.dept === dept) ? '' : 'none';
-  });
+function empSetDept(dept, btn) {
+  empDeptFilter = dept;
+  empRefreshRows();
+}
+
+async function empRefreshRows() {
+  const employees = await DB.getEmployees(empCurrentLocation);
+  document.getElementById('emp-tbody').innerHTML = empRows(employees);
+}
+
+async function empApplyFilters() {
+  empRefreshRows();
+}
+
+// ---- TOGGLE STATUS (quick click) ----
+async function empToggleStatus(id, currentStatus) {
+  const newStatus = currentStatus === 'employed' ? 'resigned' : 'employed';
+  const label = newStatus === 'resigned' ? 'Mark as Resigned?' : 'Mark as Employed?';
+  if (!confirm(label)) return;
+  const employees = await DB.getEmployees(empCurrentLocation);
+  const emp = employees.find(e => e.id === id);
+  if (!emp) return;
+  emp.status = newStatus;
+  await DB.saveEmployee(empCurrentLocation, emp);
+  toast(newStatus === 'resigned' ? '🚪 Marked as Resigned' : '✅ Marked as Employed');
+  employeesRender(empCurrentLocation);
 }
 
 // ---- EXCEL IMPORT ----
 async function empImportExcel(input) {
   const file = input.files[0];
   if (!file) return;
-
-  // Show overlay
   const overlay = document.getElementById('emp-import-overlay');
   overlay.style.display = 'flex';
   document.getElementById('emp-import-status').textContent = 'Reading Excel file...';
   document.getElementById('emp-import-bar').style.width = '5%';
-
   try {
     const data = await file.arrayBuffer();
-    // Use SheetJS (XLSX) loaded via CDN in index.html
     const workbook = XLSX.read(data, { type: 'arraybuffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-    // Filter rows matching current location (or import all)
     const toImport = rows.filter(r => {
       const loc = (r['Location'] || r['location'] || '').toString().trim();
-      return loc === '' || loc.toLowerCase() === empCurrentLocation.toLowerCase() || loc === empCurrentLocation;
+      return loc === '' || loc.toLowerCase() === empCurrentLocation.toLowerCase();
     });
-
     if (toImport.length === 0) {
       overlay.style.display = 'none';
-      toast(`No rows found for ${empCurrentLocation}. Check Location column matches exactly.`, 'error');
-      input.value = '';
-      return;
+      toast(`No rows found for ${empCurrentLocation}.`, 'error');
+      input.value = ''; return;
     }
-
-    document.getElementById('emp-import-status').textContent = `Checking for existing employees...`;
+    document.getElementById('emp-import-status').textContent = 'Checking for duplicates...';
     document.getElementById('emp-import-count').textContent = `0 / ${toImport.length}`;
-
-    // Load existing employees to check for duplicates
     const existing = await DB.getEmployees(empCurrentLocation);
     const existingNames = new Set(existing.map(e => e.name.trim().toLowerCase()));
-
     let saved = 0, skipped = 0;
     for (const row of toImport) {
       const name = (row['Name'] || row['name'] || '').toString().trim();
       if (!name) continue;
-
-      // Skip if already exists (case-insensitive match)
       if (existingNames.has(name.toLowerCase())) {
         skipped++;
-        const pct = Math.round(((saved + skipped) / toImport.length) * 100);
-        document.getElementById('emp-import-bar').style.width = pct + '%';
-        document.getElementById('emp-import-count').textContent = `${saved + skipped} / ${toImport.length}`;
-        document.getElementById('emp-import-status').textContent = `⏭ Skipped (duplicate): ${name}`;
+        const pct = Math.round(((saved+skipped)/toImport.length)*100);
+        document.getElementById('emp-import-bar').style.width = pct+'%';
+        document.getElementById('emp-import-count').textContent = `${saved+skipped} / ${toImport.length}`;
+        document.getElementById('emp-import-status').textContent = `⏭ Skipped: ${name}`;
         continue;
       }
-
       const emp = {
-        id: genId(),
-        name,
-        location: (row['Location'] || row['location'] || empCurrentLocation).toString().trim(),
-        department: (row['Department'] || row['department'] || '').toString().trim(),
-        designation: (row['Designation'] || row['designation'] || '').toString().trim(),
+        id: genId(), name,
+        location: (row['Location']||row['location']||empCurrentLocation).toString().trim(),
+        department: (row['Department']||row['department']||'').toString().trim(),
+        designation: (row['Designation']||row['designation']||'').toString().trim(),
+        status: 'employed'
       };
       await DB.saveEmployee(empCurrentLocation, emp);
-      existingNames.add(name.toLowerCase()); // prevent duplicates within same file too
+      existingNames.add(name.toLowerCase());
       saved++;
-      const pct = Math.round(((saved + skipped) / toImport.length) * 100);
-      document.getElementById('emp-import-bar').style.width = pct + '%';
-      document.getElementById('emp-import-count').textContent = `${saved + skipped} / ${toImport.length}`;
+      const pct = Math.round(((saved+skipped)/toImport.length)*100);
+      document.getElementById('emp-import-bar').style.width = pct+'%';
+      document.getElementById('emp-import-count').textContent = `${saved+skipped} / ${toImport.length}`;
       document.getElementById('emp-import-status').textContent = `✅ Saving: ${emp.name}`;
     }
-
     overlay.style.display = 'none';
-    if (skipped > 0) {
-      toast(`✅ ${saved} imported, ${skipped} skipped (already exist)`);
-    } else {
-      toast(`✅ ${saved} employees imported successfully!`);
-    }
+    toast(skipped > 0 ? `✅ ${saved} imported, ${skipped} skipped (duplicates)` : `✅ ${saved} employees imported!`);
     input.value = '';
     employeesRender(empCurrentLocation);
-
   } catch (err) {
     overlay.style.display = 'none';
-    toast('Error reading Excel file: ' + err.message, 'error');
+    toast('Error: ' + err.message, 'error');
     input.value = '';
-    console.error(err);
   }
 }
 
@@ -222,7 +252,7 @@ function empModal() {
           </div>
           <div class="form-group">
             <label>Location</label>
-            <input id="emp-location" type="text" value="${empCurrentLocation}" readonly style="opacity:0.7;"/>
+            <input id="emp-location" type="text" readonly style="opacity:0.7;"/>
           </div>
           <div class="form-group">
             <label>Department</label>
@@ -231,6 +261,19 @@ function empModal() {
           <div class="form-group span2">
             <label>Designation</label>
             <input id="emp-designation" type="text" placeholder="Job title / designation"/>
+          </div>
+          <div class="form-group span2">
+            <label>Employment Status</label>
+            <div style="display:flex;gap:12px;margin-top:6px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border-radius:8px;border:2px solid var(--border);flex:1;justify-content:center;transition:all 0.2s;" id="status-employed-label">
+                <input type="radio" name="emp-status" id="emp-status-employed" value="employed" checked onchange="empStatusRadioChange()" style="display:none;"/>
+                <span>✅ Employed</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border-radius:8px;border:2px solid var(--border);flex:1;justify-content:center;transition:all 0.2s;" id="status-resigned-label">
+                <input type="radio" name="emp-status" id="emp-status-resigned" value="resigned" onchange="empStatusRadioChange()" style="display:none;"/>
+                <span>🚪 Resigned</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -242,12 +285,23 @@ function empModal() {
   </div>`;
 }
 
+function empStatusRadioChange() {
+  const employed = document.getElementById('emp-status-employed').checked;
+  document.getElementById('status-employed-label').style.borderColor = employed ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('status-employed-label').style.background = employed ? 'rgba(0,255,163,0.08)' : '';
+  document.getElementById('status-resigned-label').style.borderColor = !employed ? '#ef4444' : 'var(--border)';
+  document.getElementById('status-resigned-label').style.background = !employed ? 'rgba(239,68,68,0.08)' : '';
+}
+
 function empOpenAdd() {
   empEditId = null;
   document.getElementById('emp-modal-title').textContent = 'Add Employee';
   document.getElementById('emp-name').value = '';
   document.getElementById('emp-dept').value = '';
   document.getElementById('emp-designation').value = '';
+  document.getElementById('emp-location').value = empCurrentLocation;
+  document.getElementById('emp-status-employed').checked = true;
+  empStatusRadioChange();
   document.getElementById('emp-modal').style.display = 'flex';
 }
 
@@ -260,6 +314,11 @@ async function empOpenEdit(id) {
   document.getElementById('emp-name').value = e.name || '';
   document.getElementById('emp-dept').value = e.department || '';
   document.getElementById('emp-designation').value = e.designation || '';
+  document.getElementById('emp-location').value = e.location || empCurrentLocation;
+  const isResigned = e.status === 'resigned';
+  document.getElementById('emp-status-employed').checked = !isResigned;
+  document.getElementById('emp-status-resigned').checked = isResigned;
+  empStatusRadioChange();
   document.getElementById('emp-modal').style.display = 'flex';
 }
 
@@ -274,6 +333,7 @@ async function empSave() {
     location: empCurrentLocation,
     department: document.getElementById('emp-dept').value.trim(),
     designation: document.getElementById('emp-designation').value.trim(),
+    status: document.getElementById('emp-status-resigned').checked ? 'resigned' : 'employed'
   };
   toast('Saving...');
   await DB.saveEmployee(empCurrentLocation, emp);
