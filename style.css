@@ -696,3 +696,34 @@ tbody td {
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
+
+/* ---- INVENTORY IMPORT WARNINGS ---- */
+.import-warn-row {
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-left: 4px solid;
+  font-size: 13px;
+}
+.import-warn-error {
+  background: rgba(239,68,68,0.08);
+  border-color: #ef4444;
+}
+.import-warn-warning {
+  background: rgba(245,158,11,0.08);
+  border-color: #f59e0b;
+}
+.import-warn-skip {
+  background: rgba(100,116,139,0.08);
+  border-color: #64748b;
+}
+.import-warn-header {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.import-warn-msg {
+  color: var(--text2);
+  font-size: 12px;
+  padding-left: 8px;
+  margin-top: 2px;
+}
