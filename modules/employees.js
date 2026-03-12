@@ -151,13 +151,28 @@ async function empImportExcel(input) {
       return;
     }
 
-    document.getElementById('emp-import-status').textContent = `Found ${toImport.length} employees. Saving to database...`;
+    document.getElementById('emp-import-status').textContent = `Checking for existing employees...`;
     document.getElementById('emp-import-count').textContent = `0 / ${toImport.length}`;
 
-    let saved = 0;
+    // Load existing employees to check for duplicates
+    const existing = await DB.getEmployees(empCurrentLocation);
+    const existingNames = new Set(existing.map(e => e.name.trim().toLowerCase()));
+
+    let saved = 0, skipped = 0;
     for (const row of toImport) {
       const name = (row['Name'] || row['name'] || '').toString().trim();
       if (!name) continue;
+
+      // Skip if already exists (case-insensitive match)
+      if (existingNames.has(name.toLowerCase())) {
+        skipped++;
+        const pct = Math.round(((saved + skipped) / toImport.length) * 100);
+        document.getElementById('emp-import-bar').style.width = pct + '%';
+        document.getElementById('emp-import-count').textContent = `${saved + skipped} / ${toImport.length}`;
+        document.getElementById('emp-import-status').textContent = `⏭ Skipped (duplicate): ${name}`;
+        continue;
+      }
+
       const emp = {
         id: genId(),
         name,
@@ -166,15 +181,20 @@ async function empImportExcel(input) {
         designation: (row['Designation'] || row['designation'] || '').toString().trim(),
       };
       await DB.saveEmployee(empCurrentLocation, emp);
+      existingNames.add(name.toLowerCase()); // prevent duplicates within same file too
       saved++;
-      const pct = Math.round((saved / toImport.length) * 100);
+      const pct = Math.round(((saved + skipped) / toImport.length) * 100);
       document.getElementById('emp-import-bar').style.width = pct + '%';
-      document.getElementById('emp-import-count').textContent = `${saved} / ${toImport.length}`;
-      document.getElementById('emp-import-status').textContent = `Saving: ${emp.name}`;
+      document.getElementById('emp-import-count').textContent = `${saved + skipped} / ${toImport.length}`;
+      document.getElementById('emp-import-status').textContent = `✅ Saving: ${emp.name}`;
     }
 
     overlay.style.display = 'none';
-    toast(`✅ ${saved} employees imported successfully!`);
+    if (skipped > 0) {
+      toast(`✅ ${saved} imported, ${skipped} skipped (already exist)`);
+    } else {
+      toast(`✅ ${saved} employees imported successfully!`);
+    }
     input.value = '';
     employeesRender(empCurrentLocation);
 
