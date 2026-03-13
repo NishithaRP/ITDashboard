@@ -1583,12 +1583,13 @@ async function invImportExcel(input) {
     const data = await file.arrayBuffer();
     const workbook = XLSX.read(data, { type: 'arraybuffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    // Auto-detect header row — skip label rows until 'Employee Name' is found
+    // Auto-detect header row — check if 'Employee Name' exists in first OR second row
     let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
     if (rows.length > 0) {
-      const firstKey = Object.keys(rows[0])[0] || '';
-      if (firstKey !== 'Employee Name' && firstKey !== 'Employee') {
-        // Header is on row 2 (template has a top label row)
+      const keys0 = Object.keys(rows[0]).map(k => k.toLowerCase());
+      const hasEmpName = keys0.some(k => k.includes('employee'));
+      if (!hasEmpName) {
+        // Try row 2 as header (old template had a label row on top)
         rows = XLSX.utils.sheet_to_json(sheet, { defval: '', range: 1 });
       }
     }
