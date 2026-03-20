@@ -4255,8 +4255,18 @@ async function transfersRender(location) {
   transferCurrentLocation = location;
   const el = document.getElementById('module-content');
   if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
-  const transfers = await DB.getTransfers(location);
-  if (el) el.innerHTML = transfersHTML(location, transfers);
+  try {
+    const transfers = await DB.getTransfers(location);
+    if (el) el.innerHTML = transfersHTML(location, transfers);
+  } catch(err) {
+    if (el) el.innerHTML = '<div style="text-align:center;padding:48px;">'
+      + '<div style="font-size:32px;margin-bottom:12px;">⚠️</div>'
+      + '<div style="color:var(--danger);font-size:15px;margin-bottom:8px;">Could not load transfers</div>'
+      + '<div style="color:var(--text2);font-size:13px;margin-bottom:16px;">' + (err.message||err) + '</div>'
+      + '<div style="color:var(--text2);font-size:12px;">Make sure the transfers table exists in Supabase and RLS is disabled.<br/>'
+      + 'Run the <strong>fix_transfers_rls.sql</strong> file in Supabase SQL Editor.</div>'
+      + '</div>';
+  }
 }
 
 function transfersHTML(location, transfers) {
@@ -4323,7 +4333,7 @@ function transferRows(transfers) {
   return transfers.map(t => {
     const date = t.transferDate ? new Date(t.transferDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
     const assetIcon = { 'IT Inventory':'💻', 'Mobile Phone':'📱', 'IP Assignment':'🌐', 'ERP Account':'📊', 'RDP Account':'🖥️', 'Import Transfer':'📥' }[t.assetType] || '📦';
-    const toEmp = t.toEmployee
+    const toEmp = (t.toEmployee && t.toEmployee.trim())
       ? `<span style="color:var(--accent);font-weight:600;">✅ ${t.toEmployee}</span>`
       : `<span style="color:var(--warning);font-style:italic;">🪑 Left Vacant</span>`;
 
