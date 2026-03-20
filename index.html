@@ -1015,7 +1015,8 @@ const MODULES = [
   { id:'mobiles',   label:'Mobile Phones',     icon:'📱' },
   { id:'ip',        label:'IP Manager',         icon:'🌐' },
   { id:'systems',   label:'Systems Access',    icon:'🖥️' },
-  { id:'employees', label:'Employees',          icon:'👥' }
+  { id:'employees', label:'Employees',          icon:'👥' },
+  { id:'transfers', label:'Transfers',          icon:'🔄' }
 ];
 
 async function sbFetch(path, options={}) {
@@ -1117,7 +1118,15 @@ const DB = {
   async saveEmployee(location,emp) {
     await sbFetch('employees',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:emp.id,location,name:emp.name,department:emp.department,designation:emp.designation,status:emp.status||'employed'})});
   },
-  async deleteEmployee(id) { await sbFetch(`employees?id=eq.${id}`,{method:'DELETE'}); }
+  async deleteEmployee(id) { await sbFetch(`employees?id=eq.${id}`,{method:'DELETE'}); },
+  async getTransfers(location) {
+    const rows = await sbFetch(`transfers?location=eq.${encodeURIComponent(location)}&order=transfer_date.desc`);
+    return (rows||[]).map(r=>({id:r.id,location:r.location,transferDate:r.transfer_date,fromEmployee:r.from_employee,toEmployee:r.to_employee,assetType:r.asset_type,assetDescription:r.asset_description,assetCode:r.asset_code,notes:r.notes}));
+  },
+  async logTransfer(location, t) {
+    await sbFetch('transfers',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:t.id,location,transfer_date:t.transferDate||new Date().toISOString(),from_employee:t.fromEmployee,to_employee:t.toEmployee||null,asset_type:t.assetType,asset_description:t.assetDescription,asset_code:t.assetCode||null,notes:t.notes||null})});
+  },
+  async deleteTransfer(id) { await sbFetch(`transfers?id=eq.${id}`,{method:'DELETE'}); }
 };
 
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -1599,6 +1608,12 @@ async function confirmResignedImport() {
       transferMap[name.toLowerCase()] = val;
     }
 
+    // Log transfer if asset is being moved
+    if (val !== '__keep__') {
+      const toName = transferMap[name.toLowerCase()] || null;
+      await DB.logTransfer(location, { id: genId(), transferDate: new Date().toISOString(), fromEmployee: name, toEmployee: toName, assetType: 'Import Transfer', assetDescription: 'Transferred during Excel import', assetCode: null, notes: val === '__vacant__' ? 'Left vacant' : null });
+    }
+
     // Re-activate checkbox
     const reactivateCb = document.getElementById('rim-reactivate-' + key);
     if (reactivateCb && reactivateCb.checked) {
@@ -1804,31 +1819,38 @@ async function confirmResign(empName) {
   const emp = allEmps.find(e => e.name.toLowerCase().trim() === empName.toLowerCase().trim());
   if (emp) { emp.status = 'resigned'; await DB.saveEmployee(location, emp); }
 
-  // 2. Transfer all linked records
+  const now = new Date().toISOString();
+
+  // 2. Transfer all linked records + log each transfer
   for (let i = 0; i < linkedInv.length; i++) {
     const to = await resolve('inv', i);
     linkedInv[i].employee = to;
     await DB.saveInventoryItem(location, linkedInv[i]);
+    await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'IT Inventory', assetDescription: (linkedInv[i].brand||'') + ' ' + (linkedInv[i].model||''), assetCode: linkedInv[i].assetCode||null });
   }
   for (let i = 0; i < linkedMob.length; i++) {
     const to = await resolve('mob', i);
     linkedMob[i].employee = to;
     await DB.saveMobile(location, linkedMob[i]);
+    await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'Mobile Phone', assetDescription: (linkedMob[i].brand||'') + ' ' + (linkedMob[i].model||'') + (linkedMob[i].mobileNumber ? ' · ' + linkedMob[i].mobileNumber : ''), assetCode: null });
   }
   for (let i = 0; i < linkedIPs.length; i++) {
     const to = await resolve('ip', i);
     linkedIPs[i].employee = to;
     await DB.saveIP(location, linkedIPs[i]);
+    await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'IP Assignment', assetDescription: linkedIPs[i].ipAddress||'', assetCode: null });
   }
   for (let i = 0; i < linkedERP.length; i++) {
     const to = await resolve('erp', i);
     linkedERP[i].employee = to;
     await DB.saveERP(location, linkedERP[i]);
+    await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'ERP Account', assetDescription: (linkedERP[i].erpSystem||'') + ' · ' + (linkedERP[i].accessLevel||''), assetCode: null });
   }
   for (let i = 0; i < linkedRDP.length; i++) {
     const to = await resolve('rdp', i);
     linkedRDP[i].label = to || linkedRDP[i].label;
     await DB.saveRDP(location, linkedRDP[i]);
+    await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'RDP Account', assetDescription: linkedRDP[i].computerName||linkedRDP[i].label||'', assetCode: null });
   }
 
   const total = linkedInv.length + linkedMob.length + linkedIPs.length + linkedERP.length + linkedRDP.length;
@@ -4225,6 +4247,126 @@ async function empDelete(id) {
 </script>
 <script>
 // ============================================================
+// TRANSFERS MODULE — logs all asset transfers on resignation
+// ============================================================
+let transferCurrentLocation = '';
+
+async function transfersRender(location) {
+  transferCurrentLocation = location;
+  const el = document.getElementById('module-content');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text2);">⏳ Loading...</div>';
+  const transfers = await DB.getTransfers(location);
+  if (el) el.innerHTML = transfersHTML(location, transfers);
+}
+
+function transfersHTML(location, transfers) {
+  // Stats
+  const today = new Date().toDateString();
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const todayCount = transfers.filter(t => new Date(t.transferDate).toDateString() === today).length;
+  const monthCount = transfers.filter(t => (t.transferDate||'').startsWith(thisMonth)).length;
+  const vacantCount = transfers.filter(t => !t.toEmployee).length;
+
+  // Group by type for filter
+  const types = [...new Set(transfers.map(t => t.assetType))];
+
+  return `<div>
+    <div class="section-header">
+      <div>
+        <div class="section-title">🔄 Asset Transfers</div>
+        <div class="section-subtitle">${location} — ${transfers.length} transfer(s) logged</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="search-bar"><span class="search-icon">🔍</span><input id="tr-search" type="text" placeholder="Search name, asset..." oninput="trFilter()"/></div>
+        <select id="tr-type-filter" onchange="trFilter()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit;">
+          <option value="">All Types</option>
+          ${types.map(t => `<option value="${t}">${t}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total Transfers</div><div class="stat-value">${transfers.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Today</div><div class="stat-value" style="color:var(--accent)">${todayCount}</div></div>
+      <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value" style="color:var(--accent2)">${monthCount}</div></div>
+      <div class="stat-card"><div class="stat-label">Left Vacant</div><div class="stat-value" style="color:var(--warning)">${vacantCount}</div></div>
+    </div>
+
+    <div class="card" style="padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Date</th>
+            <th>From Employee</th>
+            <th>Asset Type</th>
+            <th>Asset</th>
+            <th>Transferred To</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="tr-tbody">
+            ${transferRows(transfers)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+function transferRows(transfers) {
+  if (!transfers.length) return `<tr><td colspan="6">
+    <div class="empty-state" style="padding:48px;">
+      <div class="icon">🔄</div>
+      <h3>No transfers logged yet</h3>
+      <p>Transfers are recorded automatically when an employee is resigned.</p>
+    </div></td></tr>`;
+
+  return transfers.map(t => {
+    const date = t.transferDate ? new Date(t.transferDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const assetIcon = { 'IT Inventory':'💻', 'Mobile Phone':'📱', 'IP Assignment':'🌐', 'ERP Account':'📊', 'RDP Account':'🖥️', 'Import Transfer':'📥' }[t.assetType] || '📦';
+    const toEmp = t.toEmployee
+      ? `<span style="color:var(--accent);font-weight:600;">✅ ${t.toEmployee}</span>`
+      : `<span style="color:var(--warning);font-style:italic;">🪑 Left Vacant</span>`;
+
+    return `<tr>
+      <td style="font-size:12px;color:var(--text2);white-space:nowrap;">${date}</td>
+      <td><strong style="color:var(--danger);">🚪 ${t.fromEmployee||'—'}</strong></td>
+      <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px;">${assetIcon} ${t.assetType||'—'}</span></td>
+      <td style="font-size:13px;">
+        ${t.assetCode ? `<span style="font-family:monospace;color:var(--accent2);font-size:12px;">${t.assetCode}</span> ` : ''}
+        ${t.assetDescription||'—'}
+      </td>
+      <td>${toEmp}</td>
+      <td class="action-btns">
+        <button class="btn btn-small btn-danger" onclick="trDelete('${t.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function trFilter() {
+  const q    = (document.getElementById('tr-search').value||'').toLowerCase();
+  const type = (document.getElementById('tr-type-filter').value||'');
+  let transfers = await DB.getTransfers(transferCurrentLocation);
+  if (q)    transfers = transfers.filter(t =>
+    (t.fromEmployee||'').toLowerCase().includes(q) ||
+    (t.toEmployee||'').toLowerCase().includes(q) ||
+    (t.assetDescription||'').toLowerCase().includes(q) ||
+    (t.assetCode||'').toLowerCase().includes(q)
+  );
+  if (type) transfers = transfers.filter(t => t.assetType === type);
+  document.getElementById('tr-tbody').innerHTML = transferRows(transfers);
+}
+
+async function trDelete(id) {
+  if (!confirm('Delete this transfer record?')) return;
+  await DB.deleteTransfer(id);
+  toast('Transfer record deleted');
+  transfersRender(transferCurrentLocation);
+}
+
+</script>
+<script>
+// ============================================================
 // MAIN APP CONTROLLER
 // ============================================================
 
@@ -4276,6 +4418,7 @@ function renderCurrentModule() {
     case 'ip':        ipRender(currentLocation); break;
     case 'systems':   systemsRender(currentLocation); break;
     case 'employees': employeesRender(currentLocation); break;
+    case 'transfers': transfersRender(currentLocation); break;
   }
 }
 
