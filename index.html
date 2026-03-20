@@ -1382,7 +1382,283 @@ async function confirmNameResolver(prefix, afterResolve) {
   if (prefix === 'inv') window._invUnmatched = null;
   if (prefix === 'mob') window._mobUnmatched = null;
 
+  // Check if any matched employees are resigned — handle each
+  const allEmpsNow = await DB.getEmployees(location);
+  const resignedMatched = [];
+  for (const item of toSave) {
+    const empRec = allEmpsNow.find(e => e.name.toLowerCase().trim() === (item.employee||'').toLowerCase().trim());
+    if (empRec && (empRec.status||'employed') === 'resigned') {
+      if (!resignedMatched.find(n => n === empRec.name)) resignedMatched.push(empRec.name);
+    }
+  }
+
+  if (resignedMatched.length > 0) {
+    // Show resigned warning before proceeding
+    showResignedImportWarning(resignedMatched, location, async function() {
+      await afterResolve(toSave);
+    });
+    return;
+  }
+
   await afterResolve(toSave);
+}
+
+// ============================================================
+// RESIGNED EMPLOYEE WARNING IN IMPORT
+// ============================================================
+function showResignedImportWarning(resignedNames, location, onProceed) {
+  const existing = document.getElementById('resign-import-modal');
+  if (existing) existing.remove();
+
+  const html = '<div id="resign-import-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;display:flex;align-items:center;justify-content:center;">'
+    + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow);">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
+    + '<span style="font-size:28px;">⚠️</span>'
+    + '<div><div style="font-size:17px;font-weight:700;">Resigned Employee(s) Detected</div>'
+    + '<div style="font-size:13px;color:var(--text2);margin-top:2px;">The following matched employee(s) are currently marked as <span style="color:var(--danger);font-weight:600;">Resigned</span>.</div></div>'
+    + '</div>'
+    + resignedNames.map(function(name) {
+        return '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">'
+          + '<div><strong style="color:var(--danger);">🚪 ' + name + '</strong>'
+          + '<div style="font-size:12px;color:var(--text2);margin-top:2px;">Currently resigned — what would you like to do?</div></div>'
+          + '<select id="rim-sel-'+name.replace(/\s+/g,'_')+'" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;font-size:13px;font-family:inherit;">'
+          + '<option value="import_anyway">📥 Import anyway (keep resigned)</option>'
+          + '<option value="reactivate">✅ Re-activate as Employed</option>'
+          + '<option value="skip">⏭️ Skip this employee records</option>'
+          + '</select>'
+          + '</div>';
+      }).join('')
+    + '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">'
+    + '<button onclick="closeResignImportModal()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-size:13px;">Cancel</button>'
+    + '<button onclick="confirmResignedImport()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;">Confirm & Continue</button>'
+    + '</div></div></div>';
+
+  document.body.insertAdjacentHTML('beforeend', html);
+  window._rimContext = { resignedNames, location, onProceed };
+  window._rimSkipNames = [];
+}
+
+async function confirmResignedImport() {
+  const ctx = window._rimContext;
+  if (!ctx) return;
+  const { resignedNames, location, onProceed } = ctx;
+  document.getElementById('resign-import-modal').remove();
+
+  for (const name of resignedNames) {
+    const key = name.replace(/\s+/g,'_');
+    const sel = document.getElementById('rim-sel-' + key);
+    const action = sel ? sel.value : 'import_anyway';
+    if (action === 'reactivate') {
+      const allEmps = await DB.getEmployees(location);
+      const emp = allEmps.find(e => e.name.toLowerCase().trim() === name.toLowerCase().trim());
+      if (emp) { emp.status = 'employed'; await DB.saveEmployee(location, emp); toast('✅ Re-activated: ' + name); }
+    }
+    // 'skip' is handled by filtering in afterResolve — we'll store skips
+    if (action === 'skip' && window._rimSkipNames) window._rimSkipNames.push(name.toLowerCase());
+  }
+
+  window._rimContext = null;
+  if (onProceed) await onProceed();
+}
+
+function closeResignImportModal() { var m=document.getElementById('resign-import-modal'); if(m) m.remove(); }
+
+</script>
+<script>
+// ============================================================
+// RESIGN SYNC ENGINE
+// Handles employee resignation across all linked tabs:
+// Inventory, Mobiles, IP Manager, ERP Accounts, RDP Accounts
+// ============================================================
+
+// Called from: Employees tab toggle, Import resolver
+async function showResignDialog(empName, location, onDone) {
+  // Load all linked records
+  const [inventory, mobiles, ips, erps, rdps, allEmps] = await Promise.all([
+    DB.getInventory(location),
+    DB.getMobiles(location),
+    DB.getIPs(location),
+    DB.getERP(location),
+    DB.getRDP(location),
+    DB.getEmployees(location),
+  ]);
+
+  const nameLower = empName.toLowerCase().trim();
+  const linkedInv  = inventory.filter(i => (i.employee||'').toLowerCase().trim() === nameLower);
+  const linkedMob  = mobiles.filter(m => (m.employee||'').toLowerCase().trim() === nameLower);
+  const linkedIPs  = ips.filter(i => (i.employee||'').toLowerCase().trim() === nameLower);
+  const linkedERP  = erps.filter(e => (e.employee||'').toLowerCase().trim() === nameLower);
+  const linkedRDP  = rdps.filter(r => r.label && r.label.toLowerCase().includes(nameLower));
+
+  const hasLinked = linkedInv.length || linkedMob.length || linkedIPs.length || linkedERP.length || linkedRDP.length;
+  const otherEmps = allEmps.filter(e => e.name.toLowerCase().trim() !== nameLower && (e.status||'employed') === 'employed');
+
+  // Build modal HTML
+  const empOpts = '<option value="__clear__">— Leave empty (unassign) —</option>'
+    + otherEmps.map(e => '<option value="'+e.name.replace(/"/g,'&quot;')+'">'+e.name+(e.department?' · '+e.department:'')+'</option>').join('');
+
+  function section(icon, label, items, prefix) {
+    if (!items.length) return '';
+    return '<div style="margin-bottom:16px;">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">'+icon+' '+label+' ('+items.length+')</div>'
+      + items.map((item, idx) => {
+          const desc = item.assetCode ? item.assetCode+' — ' : '';
+          const detail = item.brand ? (item.brand+' '+(item.model||'')) : item.ipAddress || item.erpSystem || item.label || '';
+          return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">'
+            + '<div>'
+            + '<div style="font-size:13px;font-weight:600;">'+desc+detail+'</div>'
+            + (item.serialNumber ? '<div style="font-size:11px;color:var(--text2);font-family:monospace;">SN: '+item.serialNumber+'</div>' : '')
+            + '</div>'
+            + '<select id="resign-sel-'+prefix+'-'+idx+'" style="background:var(--surface3,var(--bg));border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;font-size:13px;font-family:inherit;min-width:220px;">'
+            + '<option value="__new__" style="color:var(--accent);font-weight:700;">➕ Create new employee</option>'
+            + empOpts
+            + '</select>'
+            + '</div>'
+            + '<div id="resign-newform-'+prefix+'-'+idx+'" style="display:none;margin-top:10px;background:rgba(0,212,170,0.05);border:1px solid rgba(0,212,170,0.25);border-radius:8px;padding:12px;">'
+            + '<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;">➕ New Employee Details</div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+            + '<div><label style="font-size:11px;color:var(--text2);">Full Name *</label><input id="resign-name-'+prefix+'-'+idx+'" type="text" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+            + '<div><label style="font-size:11px;color:var(--text2);">Department</label><input id="resign-dept-'+prefix+'-'+idx+'" type="text" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+            + '</div></div>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  const modalHTML = '<div id="resign-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;display:flex;align-items:center;justify-content:center;">'
+    + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:92%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">'
+    + '<span style="font-size:28px;">🚪</span>'
+    + '<div><div style="font-size:18px;font-weight:700;">Resign: '+empName+'</div>'
+    + '<div style="font-size:13px;color:var(--text2);margin-top:2px;">This employee will be marked as <span style="color:var(--danger);font-weight:600;">Resigned</span>.</div></div>'
+    + '</div>'
+    + (hasLinked
+        ? '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;margin:14px 0;font-size:13px;color:var(--text2);">'
+          + '⚠️ This employee has linked records. Choose who to reassign each to, or leave empty.'
+          + '</div>'
+          + section('💻','IT Inventory', linkedInv,  'inv')
+          + section('📱','Mobile Phones', linkedMob, 'mob')
+          + section('🌐','IP Manager',    linkedIPs,  'ip')
+          + section('📊','ERP Accounts',  linkedERP,  'erp')
+          + section('🖥️','RDP Accounts',  linkedRDP,  'rdp')
+        : '<div style="background:var(--surface2);border-radius:10px;padding:14px;margin:14px 0;font-size:13px;color:var(--text2);text-align:center;">✅ No linked records found for this employee.</div>'
+      )
+    + '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">'
+    + '<button onclick="closeResignModal()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-size:13px;">Cancel</button>'
+    + '<button onclick="confirmResign(\''+empName.replace(/'/g,"\\'")+'\')" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;">🚪 Confirm Resignation</button>'
+    + '</div></div></div>';
+
+  // Store context
+  window._resignContext = {
+    empName, location, onDone,
+    linkedInv, linkedMob, linkedIPs, linkedERP, linkedRDP
+  };
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+  // Wire up select change handlers for create-new forms
+  ['inv','mob','ip','erp','rdp'].forEach(prefix => {
+    document.querySelectorAll('[id^="resign-sel-'+prefix+'-"]').forEach(sel => {
+      sel.addEventListener('change', function() {
+        const idx = this.id.split('-').pop();
+        const form = document.getElementById('resign-newform-'+prefix+'-'+idx);
+        if (form) form.style.display = this.value === '__new__' ? 'block' : 'none';
+      });
+      // default: fire once to hide form if not __new__
+      const idx = sel.id.split('-').pop();
+      const form = document.getElementById('resign-newform-'+prefix+'-'+idx);
+      if (form && sel.value !== '__new__') form.style.display = 'none';
+    });
+  });
+}
+
+function closeResignModal() {
+  const m = document.getElementById('resign-modal');
+  if (m) m.remove();
+}
+
+async function confirmResign(empName) {
+  const ctx = window._resignContext;
+  if (!ctx) return;
+  const { location, onDone, linkedInv, linkedMob, linkedIPs, linkedERP, linkedRDP } = ctx;
+
+  closeResignModal();
+  toast('Processing resignation...');
+
+  // Helper: resolve a select value — if __new__, create employee first
+  async function resolveSelect(prefix, idx) {
+    const sel = document.getElementById('resign-sel-'+prefix+'-'+idx);
+    if (!sel) return null;
+    const val = sel.value;
+    if (val === '__clear__') return '';
+    if (val === '__new__') {
+      const name  = ((document.getElementById('resign-name-'+prefix+'-'+idx)||{}).value||'').trim();
+      const dept  = ((document.getElementById('resign-dept-'+prefix+'-'+idx)||{}).value||'').trim();
+      if (!name) return '';
+      await DB.saveEmployee(location, { id: genId(), name, department: dept, designation: '', status: 'employed' });
+      toast('✅ Created employee: ' + name);
+      return name;
+    }
+    return val;
+  }
+
+  // 1. Mark employee as resigned
+  const allEmps = await DB.getEmployees(location);
+  const emp = allEmps.find(e => e.name.toLowerCase().trim() === empName.toLowerCase().trim());
+  if (emp) {
+    emp.status = 'resigned';
+    await DB.saveEmployee(location, emp);
+  }
+
+  // 2. Reassign IT Inventory
+  for (let i = 0; i < linkedInv.length; i++) {
+    const newEmp = await resolveSelect('inv', i);
+    if (newEmp !== null) {
+      linkedInv[i].employee = newEmp;
+      await DB.saveInventoryItem(location, linkedInv[i]);
+    }
+  }
+
+  // 3. Reassign Mobiles
+  for (let i = 0; i < linkedMob.length; i++) {
+    const newEmp = await resolveSelect('mob', i);
+    if (newEmp !== null) {
+      linkedMob[i].employee = newEmp;
+      await DB.saveMobile(location, linkedMob[i]);
+    }
+  }
+
+  // 4. Reassign IPs
+  for (let i = 0; i < linkedIPs.length; i++) {
+    const newEmp = await resolveSelect('ip', i);
+    if (newEmp !== null) {
+      linkedIPs[i].employee = newEmp;
+      await DB.saveIP(location, linkedIPs[i]);
+    }
+  }
+
+  // 5. Reassign ERP
+  for (let i = 0; i < linkedERP.length; i++) {
+    const newEmp = await resolveSelect('erp', i);
+    if (newEmp !== null) {
+      linkedERP[i].employee = newEmp;
+      await DB.saveERP(location, linkedERP[i]);
+    }
+  }
+
+  // 6. Reassign RDP (label field)
+  for (let i = 0; i < linkedRDP.length; i++) {
+    const newEmp = await resolveSelect('rdp', i);
+    if (newEmp !== null) {
+      linkedRDP[i].label = newEmp;
+      await DB.saveRDP(location, linkedRDP[i]);
+    }
+  }
+
+  toast('🚪 ' + empName + ' resigned. All records updated.');
+  window._resignContext = null;
+  if (onDone) onDone();
 }
 
 </script>
@@ -3494,15 +3770,25 @@ async function empApplyFilters() {
 // ---- TOGGLE STATUS (quick click) ----
 async function empToggleStatus(id, currentStatus) {
   const newStatus = currentStatus === 'employed' ? 'resigned' : 'employed';
-  const label = newStatus === 'resigned' ? 'Mark as Resigned?' : 'Mark as Employed?';
-  if (!confirm(label)) return;
+  // Toggling back to employed — simple
+  if (newStatus === 'employed') {
+    if (!confirm('Mark as Employed again?')) return;
+    const employees = await DB.getEmployees(empCurrentLocation);
+    const emp = employees.find(e => e.id === id);
+    if (!emp) return;
+    emp.status = 'employed';
+    await DB.saveEmployee(empCurrentLocation, emp);
+    toast('✅ Marked as Employed');
+    employeesRender(empCurrentLocation);
+    return;
+  }
+  // Toggling to resigned — show full resign dialog
   const employees = await DB.getEmployees(empCurrentLocation);
   const emp = employees.find(e => e.id === id);
   if (!emp) return;
-  emp.status = newStatus;
-  await DB.saveEmployee(empCurrentLocation, emp);
-  toast(newStatus === 'resigned' ? '🚪 Marked as Resigned' : '✅ Marked as Employed');
-  employeesRender(empCurrentLocation);
+  showResignDialog(emp.name, empCurrentLocation, function() {
+    employeesRender(empCurrentLocation);
+  });
 }
 
 // ---- EXCEL IMPORT ----
