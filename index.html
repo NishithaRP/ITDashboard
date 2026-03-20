@@ -1476,31 +1476,87 @@ async function confirmNameResolver(prefix, afterResolve) {
 // ============================================================
 // RESIGNED EMPLOYEE WARNING IN IMPORT
 // ============================================================
-function showResignedImportWarning(resignedNames, location, onProceed) {
+async function showResignedImportWarning(resignedNames, location, onProceed) {
   const existing = document.getElementById('resign-import-modal');
   if (existing) existing.remove();
 
-  const html = '<div id="resign-import-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;display:flex;align-items:center;justify-content:center;">'
-    + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow);">'
-    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
-    + '<span style="font-size:28px;">⚠️</span>'
+  // Load active employees for transfer options
+  const allEmps   = await DB.getEmployees(location);
+  const activeEmps = allEmps.filter(function(e) {
+    return (e.status||'employed') === 'employed'
+      && !resignedNames.find(function(n) { return n.toLowerCase() === e.name.toLowerCase(); });
+  });
+
+  function empOpts() {
+    return '<option value="__keep__">📥 Keep assigned to resigned employee</option>'
+      + '<option value="__vacant__">🪑 Leave vacant (unassign)</option>'
+      + '<option value="__new__" style="color:#00d4aa;font-weight:700;">➕ Create new employee</option>'
+      + (activeEmps.length ? '<option disabled>── Transfer to existing ──</option>' : '')
+      + activeEmps.map(function(e) {
+          return '<option value="' + e.name.replace(/"/g,'&quot;') + '">'
+            + e.name + (e.department ? ' · ' + e.department : '') + '</option>';
+        }).join('');
+  }
+
+  function newEmpForm(key) {
+    return '<div id="rim-newform-' + key + '" style="display:none;margin-top:10px;'
+      + 'background:rgba(0,212,170,0.06);border:1px solid rgba(0,212,170,0.3);border-radius:8px;padding:12px;">'
+      + '<div style="font-size:11px;font-weight:700;color:#00d4aa;margin-bottom:8px;">➕ New Employee Details</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+      + '<div><label style="font-size:11px;color:var(--text2);">Full Name *</label>'
+      + '<input id="rim-name-' + key + '" type="text" placeholder="Full name" '
+      + 'style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);'
+      + 'padding:7px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+      + '<div><label style="font-size:11px;color:var(--text2);">Department</label>'
+      + '<input id="rim-dept-' + key + '" type="text" placeholder="e.g. Finance, IT..." '
+      + 'style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);'
+      + 'padding:7px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+      + '<div style="grid-column:span 2;"><label style="font-size:11px;color:var(--text2);">Designation</label>'
+      + '<input id="rim-desig-' + key + '" type="text" placeholder="e.g. Senior Executive..." '
+      + 'style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);'
+      + 'padding:7px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+      + '</div></div>';
+  }
+
+  let html = '<div id="resign-import-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.78);'
+    + 'z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;">'
+    + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;'
+    + 'padding:26px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+    + '<span style="font-size:30px;">⚠️</span>'
     + '<div><div style="font-size:17px;font-weight:700;">Resigned Employee(s) Detected</div>'
-    + '<div style="font-size:13px;color:var(--text2);margin-top:2px;">The following matched employee(s) are currently marked as <span style="color:var(--danger);font-weight:600;">Resigned</span>.</div></div>'
-    + '</div>'
-    + resignedNames.map(function(name) {
-        return '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">'
-          + '<div><strong style="color:var(--danger);">🚪 ' + name + '</strong>'
-          + '<div style="font-size:12px;color:var(--text2);margin-top:2px;">Currently resigned — what would you like to do?</div></div>'
-          + '<select id="rim-sel-'+name.replace(/\s+/g,'_')+'" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;font-size:13px;font-family:inherit;">'
-          + '<option value="import_anyway">📥 Import anyway (keep resigned)</option>'
-          + '<option value="reactivate">✅ Re-activate as Employed</option>'
-          + '<option value="skip">⏭️ Skip this employee records</option>'
-          + '</select>'
-          + '</div>';
-      }).join('')
-    + '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">'
-    + '<button onclick="closeResignImportModal()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-size:13px;">Cancel</button>'
-    + '<button onclick="confirmResignedImport()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;">Confirm & Continue</button>'
+    + '<div style="font-size:13px;color:var(--text2);margin-top:2px;">'
+    + 'These employees are <span style="color:var(--danger);font-weight:600;">Resigned</span>. '
+    + 'Choose what to do with their assets.</div></div></div>';
+
+  resignedNames.forEach(function(name) {
+    const key = name.replace(/[^a-zA-Z0-9]/g,'_');
+    html += '<div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25);'
+      + 'border-radius:12px;padding:14px;margin-bottom:12px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
+      + '<span style="font-size:18px;">🚪</span>'
+      + '<strong style="color:var(--danger);font-size:15px;">' + name + '</strong>'
+      + '<span style="font-size:12px;color:var(--text2);">— Currently Resigned</span></div>'
+      + '<label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px;">Asset action:</label>'
+      + '<select id="rim-sel-' + key + '" onchange="rimSelChange(\"' + key + '\",this.value)" '
+      + 'style="width:100%;background:var(--surface3,var(--bg));border:1px solid var(--border);'
+      + 'color:var(--text);padding:8px 10px;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:6px;">'
+      + empOpts()
+      + '</select>'
+      + newEmpForm(key)
+      + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(239,68,68,0.2);">'
+      + '<label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;">'
+      + '<input type="checkbox" id="rim-reactivate-' + key + '" style="accent-color:var(--accent);width:14px;height:14px;"/>'
+      + '✅ Also re-activate this employee as <strong>Employed</strong></label>'
+      + '</div></div>';
+  });
+
+  html += '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;'
+    + 'padding-top:14px;border-top:1px solid var(--border);">'
+    + '<button onclick="closeResignImportModal()" style="background:var(--surface2);color:var(--text2);'
+    + 'border:1px solid var(--border);border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-size:13px;">Cancel</button>'
+    + '<button onclick="confirmResignedImport()" style="background:var(--accent);color:#000;border:none;'
+    + 'border-radius:8px;padding:10px 26px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;">✅ Confirm & Continue</button>'
     + '</div></div></div>';
 
   document.body.insertAdjacentHTML('beforeend', html);
@@ -1508,30 +1564,74 @@ function showResignedImportWarning(resignedNames, location, onProceed) {
   window._rimSkipNames = [];
 }
 
+function rimSelChange(key, val) {
+  const form = document.getElementById('rim-newform-' + key);
+  if (form) form.style.display = val === '__new__' ? 'block' : 'none';
+}
+
 async function confirmResignedImport() {
   const ctx = window._rimContext;
   if (!ctx) return;
   const { resignedNames, location, onProceed } = ctx;
-  document.getElementById('resign-import-modal').remove();
+  const modal = document.getElementById('resign-import-modal');
+  if (modal) modal.remove();
+
+  // nameMap: old resigned name → new transfer name (or '' for vacant)
+  const transferMap = {};
 
   for (const name of resignedNames) {
-    const key = name.replace(/\s+/g,'_');
+    const key = name.replace(/[^a-zA-Z0-9]/g,'_');
     const sel = document.getElementById('rim-sel-' + key);
-    const action = sel ? sel.value : 'import_anyway';
-    if (action === 'reactivate') {
+    const val = sel ? sel.value : '__keep__';
+
+    if (val === '__new__') {
+      const newName  = ((document.getElementById('rim-name-'  + key)||{}).value||'').trim();
+      const newDept  = ((document.getElementById('rim-dept-'  + key)||{}).value||'').trim();
+      const newDesig = ((document.getElementById('rim-desig-' + key)||{}).value||'').trim();
+      if (newName) {
+        await DB.saveEmployee(location, { id: genId(), name: newName, department: newDept, designation: newDesig, status: 'employed' });
+        toast('✅ Created: ' + newName);
+        transferMap[name.toLowerCase()] = newName;
+      }
+    } else if (val === '__vacant__') {
+      transferMap[name.toLowerCase()] = '';
+    } else if (val !== '__keep__') {
+      transferMap[name.toLowerCase()] = val;
+    }
+
+    // Re-activate checkbox
+    const reactivateCb = document.getElementById('rim-reactivate-' + key);
+    if (reactivateCb && reactivateCb.checked) {
       const allEmps = await DB.getEmployees(location);
-      const emp = allEmps.find(e => e.name.toLowerCase().trim() === name.toLowerCase().trim());
+      const emp = allEmps.find(function(e) { return e.name.toLowerCase().trim() === name.toLowerCase().trim(); });
       if (emp) { emp.status = 'employed'; await DB.saveEmployee(location, emp); toast('✅ Re-activated: ' + name); }
     }
-    // 'skip' is handled by filtering in afterResolve — we'll store skips
-    if (action === 'skip' && window._rimSkipNames) window._rimSkipNames.push(name.toLowerCase());
+  }
+
+  // Apply transfer map to pending import items
+  if (Object.keys(transferMap).length > 0) {
+    const pendingKeys = ['_invPendingImport','_mobPendingImport'];
+    pendingKeys.forEach(function(pk) {
+      if (window[pk]) {
+        window[pk] = window[pk].map(function(item) {
+          const key = (item.employee||'').toLowerCase().trim();
+          if (transferMap.hasOwnProperty(key)) {
+            return Object.assign({}, item, { employee: transferMap[key] });
+          }
+          return item;
+        });
+      }
+    });
   }
 
   window._rimContext = null;
   if (onProceed) await onProceed();
 }
 
-function closeResignImportModal() { var m=document.getElementById('resign-import-modal'); if(m) m.remove(); }
+function closeResignImportModal() {
+  var m = document.getElementById('resign-import-modal');
+  if (m) m.remove();
+}
 
 </script>
 <script>
