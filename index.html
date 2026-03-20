@@ -1307,6 +1307,9 @@ function renderNameResolver(prefix, unmatchedNames, employees, totalValid) {
       + resignedOpts
       + '</select></div></div>'
 
+      // Resigned employee re-activate prompt (hidden by default)
+      + '<div id="res-resbadge-' + prefix + '-' + idx + '" style="display:none;margin-top:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:10px 14px;font-size:13px;"></div>'
+
       // Inline create-new form (hidden by default)
       + '<div id="res-newform-' + prefix + '-' + idx + '" style="display:none;margin-top:12px;background:var(--surface3,rgba(0,212,170,0.05));'
       + 'border:1px solid rgba(0,212,170,0.25);border-radius:10px;padding:14px;">'
@@ -1339,8 +1342,35 @@ function renderNameResolver(prefix, unmatchedNames, employees, totalValid) {
 }
 
 function resolverSelChange(prefix, idx, val) {
-  const form = document.getElementById('res-newform-' + prefix + '-' + idx);
-  if (form) form.style.display = val === '__new__' ? 'block' : 'none';
+  const form    = document.getElementById('res-newform-'   + prefix + '-' + idx);
+  const resBadge= document.getElementById('res-resbadge-'  + prefix + '-' + idx);
+
+  if (form)     form.style.display     = val === '__new__'  ? 'block' : 'none';
+  if (resBadge) resBadge.style.display = 'none';
+
+  if (val && val !== '__skip__' && val !== '__new__') {
+    const allEmps = window['_' + prefix + 'EmployeeList'] || [];
+    const emp = allEmps.find(function(e) { return e.name === val; });
+    if (emp && resBadge) {
+      const isResigned = (emp.status || 'employed') === 'resigned';
+      resBadge.style.display = 'block';
+      if (isResigned) {
+        resBadge.innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">'
+          + '<span style="font-size:13px;">🚪 <strong style="color:var(--danger);">' + val + '</strong> is currently <span style="color:var(--danger);font-weight:700;">Resigned</span>.</span>'
+          + '<label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer;">'
+          + '<input type="checkbox" id="res-reactivate-' + prefix + '-' + idx + '" style="accent-color:var(--accent);width:14px;height:14px;"/> ✅ Re-activate as Employed</label>'
+          + '</div>';
+      } else {
+        resBadge.innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">'
+          + '<span style="font-size:13px;">✅ <strong>' + val + '</strong> is <span style="color:var(--accent);font-weight:700;">Employed</span>.</span>'
+          + '<label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer;">'
+          + '<input type="checkbox" id="res-resign-' + prefix + '-' + idx + '" style="accent-color:var(--danger);width:14px;height:14px;"/> 🚪 Mark as Resigned</label>'
+          + '</div>';
+      }
+    }
+  }
 }
 
 function resolverCancel(prefix) {
@@ -1374,6 +1404,24 @@ async function confirmNameResolver(prefix, afterResolve) {
       nameMap[name.toLowerCase().trim()] = fullName;
     } else if (val !== '__skip__') {
       nameMap[name.toLowerCase().trim()] = val;
+      const allEmps = await DB.getEmployees(location);
+      const emp = allEmps.find(function(e) { return e.name.toLowerCase().trim() === val.toLowerCase().trim(); });
+      if (emp) {
+        // Re-activate resigned → employed
+        const reactivateCb = document.getElementById('res-reactivate-' + prefix + '-' + idx);
+        if (reactivateCb && reactivateCb.checked && emp.status === 'resigned') {
+          emp.status = 'employed';
+          await DB.saveEmployee(location, emp);
+          toast('✅ Re-activated: ' + val);
+        }
+        // Mark employed → resigned
+        const resignCb = document.getElementById('res-resign-' + prefix + '-' + idx);
+        if (resignCb && resignCb.checked && (emp.status || 'employed') === 'employed') {
+          emp.status = 'resigned';
+          await DB.saveEmployee(location, emp);
+          toast('🚪 Marked as Resigned: ' + val);
+        }
+      }
     }
   }
 
