@@ -1582,6 +1582,25 @@ async function confirmResignedImport() {
   const ctx = window._rimContext;
   if (!ctx) return;
   const { resignedNames, location, onProceed } = ctx;
+
+  // ⚠️ COLLECT ALL VALUES FROM DOM BEFORE REMOVING MODAL
+  const collected = {};
+  for (const name of resignedNames) {
+    const key = name.replace(/[^a-zA-Z0-9]/g,'_');
+    const sel        = document.getElementById('rim-sel-'      + key);
+    const nameEl     = document.getElementById('rim-name-'     + key);
+    const deptEl     = document.getElementById('rim-dept-'     + key);
+    const desigEl    = document.getElementById('rim-desig-'    + key);
+    const reactEl    = document.getElementById('rim-reactivate-'+ key);
+    collected[name] = {
+      val:        sel     ? sel.value          : '__keep__',
+      newName:    nameEl  ? nameEl.value.trim(): '',
+      newDept:    deptEl  ? deptEl.value.trim(): '',
+      newDesig:   desigEl ? desigEl.value.trim(): '',
+      reactivate: reactEl ? reactEl.checked    : false,
+    };
+  }
+
   const modal = document.getElementById('resign-import-modal');
   if (modal) modal.remove();
 
@@ -1590,13 +1609,12 @@ async function confirmResignedImport() {
 
   for (const name of resignedNames) {
     const key = name.replace(/[^a-zA-Z0-9]/g,'_');
-    const sel = document.getElementById('rim-sel-' + key);
-    const val = sel ? sel.value : '__keep__';
+    const { val, newName, newDept, newDesig, reactivate } = collected[name];
 
     if (val === '__new__') {
-      const newName  = ((document.getElementById('rim-name-'  + key)||{}).value||'').trim();
-      const newDept  = ((document.getElementById('rim-dept-'  + key)||{}).value||'').trim();
-      const newDesig = ((document.getElementById('rim-desig-' + key)||{}).value||'').trim();
+      const newName  = collected[name].newName;
+      const newDept  = collected[name].newDept;
+      const newDesig = collected[name].newDesig;
       if (newName) {
         await DB.saveEmployee(location, { id: genId(), name: newName, department: newDept, designation: newDesig, status: 'employed' });
         toast('✅ Created: ' + newName);
@@ -1615,8 +1633,7 @@ async function confirmResignedImport() {
     }
 
     // Re-activate checkbox
-    const reactivateCb = document.getElementById('rim-reactivate-' + key);
-    if (reactivateCb && reactivateCb.checked) {
+    if (reactivate) {
       const allEmps = await DB.getEmployees(location);
       const emp = allEmps.find(function(e) { return e.name.toLowerCase().trim() === name.toLowerCase().trim(); });
       if (emp) { emp.status = 'employed'; await DB.saveEmployee(location, emp); toast('✅ Re-activated: ' + name); }
@@ -1793,25 +1810,44 @@ async function confirmResign(empName) {
   if (!ctx) return;
   const { location, onDone, linkedInv, linkedMob, linkedIPs, linkedERP, linkedRDP } = ctx;
 
+  // ⚠️ COLLECT ALL VALUES FROM DOM BEFORE CLOSING MODAL
+  function collectSelections(prefix, count) {
+    const result = [];
+    for (let i = 0; i < count; i++) {
+      const sel   = document.getElementById('resign-sel-'   + prefix + '-' + i);
+      const name  = document.getElementById('resign-name-'  + prefix + '-' + i);
+      const dept  = document.getElementById('resign-dept-'  + prefix + '-' + i);
+      const desig = document.getElementById('resign-desig-' + prefix + '-' + i);
+      result.push({
+        val:   sel   ? sel.value   : '__clear__',
+        name:  name  ? name.value.trim()  : '',
+        dept:  dept  ? dept.value.trim()  : '',
+        desig: desig ? desig.value.trim() : '',
+      });
+    }
+    return result;
+  }
+
+  const selInv = collectSelections('inv', linkedInv.length);
+  const selMob = collectSelections('mob', linkedMob.length);
+  const selIP  = collectSelections('ip',  linkedIPs.length);
+  const selERP = collectSelections('erp', linkedERP.length);
+  const selRDP = collectSelections('rdp', linkedRDP.length);
+
+  // Now safe to close modal
   closeResignModal();
   toast('Processing resignation...');
 
-  // Resolve a select: create new emp if needed, return final name or ''
-  async function resolve(prefix, idx) {
-    const sel = document.getElementById('resign-sel-' + prefix + '-' + idx);
-    if (!sel) return '';
-    const val = sel.value;
-    if (val === '__clear__') return '';
-    if (val === '__new__') {
-      const name  = ((document.getElementById('resign-name-'  + prefix + '-' + idx) || {}).value || '').trim();
-      const dept  = ((document.getElementById('resign-dept-'  + prefix + '-' + idx) || {}).value || '').trim();
-      const desig = ((document.getElementById('resign-desig-' + prefix + '-' + idx) || {}).value || '').trim();
-      if (!name) { toast('Name required for new employee', 'error'); return ''; }
-      await DB.saveEmployee(location, { id: genId(), name, department: dept, designation: desig, status: 'employed' });
-      toast('✅ Created: ' + name);
-      return name;
+  // Resolve a collected selection: create new emp if needed, return final name or ''
+  async function resolve(sel) {
+    if (!sel || sel.val === '__clear__') return '';
+    if (sel.val === '__new__') {
+      if (!sel.name) { toast('Name required for new employee', 'error'); return ''; }
+      await DB.saveEmployee(location, { id: genId(), name: sel.name, department: sel.dept, designation: sel.desig, status: 'employed' });
+      toast('✅ Created: ' + sel.name);
+      return sel.name;
     }
-    return val;
+    return sel.val;
   }
 
   // 1. Mark employee as resigned
@@ -1823,31 +1859,31 @@ async function confirmResign(empName) {
 
   // 2. Transfer all linked records + log each transfer
   for (let i = 0; i < linkedInv.length; i++) {
-    const to = await resolve('inv', i);
+    const to = await resolve(selInv[i]);
     linkedInv[i].employee = to;
     await DB.saveInventoryItem(location, linkedInv[i]);
     await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'IT Inventory', assetDescription: (linkedInv[i].brand||'') + ' ' + (linkedInv[i].model||''), assetCode: linkedInv[i].assetCode||null });
   }
   for (let i = 0; i < linkedMob.length; i++) {
-    const to = await resolve('mob', i);
+    const to = await resolve(selMob[i]);
     linkedMob[i].employee = to;
     await DB.saveMobile(location, linkedMob[i]);
     await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'Mobile Phone', assetDescription: (linkedMob[i].brand||'') + ' ' + (linkedMob[i].model||'') + (linkedMob[i].mobileNumber ? ' · ' + linkedMob[i].mobileNumber : ''), assetCode: null });
   }
   for (let i = 0; i < linkedIPs.length; i++) {
-    const to = await resolve('ip', i);
+    const to = await resolve(selIP[i]);
     linkedIPs[i].employee = to;
     await DB.saveIP(location, linkedIPs[i]);
     await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'IP Assignment', assetDescription: linkedIPs[i].ipAddress||'', assetCode: null });
   }
   for (let i = 0; i < linkedERP.length; i++) {
-    const to = await resolve('erp', i);
+    const to = await resolve(selERP[i]);
     linkedERP[i].employee = to;
     await DB.saveERP(location, linkedERP[i]);
     await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'ERP Account', assetDescription: (linkedERP[i].erpSystem||'') + ' · ' + (linkedERP[i].accessLevel||''), assetCode: null });
   }
   for (let i = 0; i < linkedRDP.length; i++) {
-    const to = await resolve('rdp', i);
+    const to = await resolve(selRDP[i]);
     linkedRDP[i].label = to || linkedRDP[i].label;
     await DB.saveRDP(location, linkedRDP[i]);
     await DB.logTransfer(location, { id: genId(), transferDate: now, fromEmployee: empName, toEmployee: to||null, assetType: 'RDP Account', assetDescription: linkedRDP[i].computerName||linkedRDP[i].label||'', assetCode: null });
