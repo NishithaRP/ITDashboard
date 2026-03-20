@@ -1232,6 +1232,162 @@ function renderLogin() {
 </script>
 <script>
 // ============================================================
+// SHARED NAME RESOLVER — used by IT Inventory & Mobile Phones
+// Supports: match to existing, create new, or keep as-is
+// ============================================================
+
+function resolverSimilarity(a, b) {
+  a = a.toLowerCase().trim(); b = b.toLowerCase().trim();
+  if (a === b) return 100;
+  const aW = a.split(' '); const bW = b.split(' ');
+  let score = 0;
+  for (const aw of aW) for (const bw of bW) {
+    if (aw === bw && aw.length > 2) score += 40;
+    else if (bw.includes(aw) && aw.length > 2) score += 20;
+    else if (aw.includes(bw) && bw.length > 2) score += 20;
+  }
+  return Math.min(score, 99);
+}
+
+function renderNameResolver(prefix, unmatchedNames, employees, totalValid) {
+  const label = prefix === 'inv' ? 'Device(s)' : 'Phone(s)';
+  const statusEl = document.getElementById(prefix + '-import-status');
+  const barEl    = document.getElementById(prefix + '-import-bar');
+  const countEl  = document.getElementById(prefix + '-import-count');
+
+  let html = '<div style="width:100%;text-align:left;">'
+    + '<div style="font-size:20px;font-weight:700;margin-bottom:4px;">🔍 Match Employee Names</div>'
+    + '<div style="color:var(--text2);font-size:13px;margin-bottom:18px;">'
+    + unmatchedNames.length + ' name(s) from Excel weren\'t found in the Employees list.<br/>'
+    + 'Match each to an existing employee, <strong style="color:var(--accent);">create a new one</strong>, or keep as-is.</div>';
+
+  unmatchedNames.forEach(function(name, idx) {
+    const suggestions = employees
+      .map(function(e) { return { e: e, score: resolverSimilarity(name, e.name) }; })
+      .sort(function(a, b) { return b.score - a.score; })
+      .slice(0, 8);
+
+    const opts = suggestions.map(function(x) {
+      const star = x.score > 50 ? ' ⭐' : x.score > 25 ? ' 🔵' : '';
+      return '<option value="' + x.e.name.replace(/"/g, '&quot;') + '">'
+        + x.e.name + (x.e.department ? ' · ' + x.e.department : '') + star + '</option>';
+    }).join('');
+
+    html += '<div id="res-card-' + prefix + '-' + idx + '" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">'
+
+      // Row: FROM EXCEL → select
+      + '<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">'
+      + '<div style="flex:1;min-width:100px;padding-top:4px;">'
+      + '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">From Excel</div>'
+      + '<strong style="color:#f59e0b;font-size:14px;">&quot;' + name + '&quot;</strong></div>'
+      + '<div style="font-size:18px;color:var(--text2);padding-top:8px;">→</div>'
+      + '<div style="flex:2;min-width:200px;">'
+      + '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Match To Employee</div>'
+      + '<select id="res-sel-' + prefix + '-' + idx + '" onchange="resolverSelChange(\'' + prefix + '\',' + idx + ',this.value)" '
+      + 'style="width:100%;background:var(--surface3,var(--bg));border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:13px;font-family:inherit;">'
+      + '<option value="__skip__">— Keep as &quot;' + name + '&quot; (as-is) —</option>'
+      + '<option value="__new__" style="color:var(--accent);font-weight:700;">➕ Create new employee &quot;' + name + '&quot;</option>'
+      + opts
+      + '</select></div></div>'
+
+      // Inline create-new form (hidden by default)
+      + '<div id="res-newform-' + prefix + '-' + idx + '" style="display:none;margin-top:12px;background:var(--surface3,rgba(0,212,170,0.05));'
+      + 'border:1px solid rgba(0,212,170,0.25);border-radius:10px;padding:14px;">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px;">➕ New Employee Details</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+      + '<div><label style="font-size:11px;color:var(--text2);">Full Name <span style="color:var(--danger)">*</span></label>'
+      + '<input id="res-name-' + prefix + '-' + idx + '" type="text" value="' + name + '" '
+      + 'style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+      + '<div><label style="font-size:11px;color:var(--text2);">Department</label>'
+      + '<input id="res-dept-' + prefix + '-' + idx + '" type="text" placeholder="e.g. IT, Finance..." '
+      + 'style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+      + '<div style="grid-column:span 2;"><label style="font-size:11px;color:var(--text2);">Designation</label>'
+      + '<input id="res-desig-' + prefix + '-' + idx + '" type="text" placeholder="e.g. Senior Executive..." '
+      + 'style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:7px;font-size:13px;font-family:inherit;margin-top:3px;"/></div>'
+      + '</div>'
+      + '<div style="margin-top:8px;font-size:11px;color:var(--text2);">ℹ️ This employee will be created in the Employees list automatically before importing.</div>'
+      + '</div>'
+
+      + '</div>';
+  });
+
+  html += '<div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">'
+    + '<button onclick="resolverCancel(\'' + prefix + '\')" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;cursor:pointer;font-family:inherit;font-size:13px;">✕ Cancel Import</button>'
+    + '<button onclick="resolverConfirm(\'' + prefix + '\')" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;">✅ Confirm & Import ' + totalValid + ' ' + label + '</button>'
+    + '</div></div>';
+
+  statusEl.innerHTML = html;
+  if (barEl)   barEl.style.width   = '0%';
+  if (countEl) countEl.textContent = '';
+}
+
+function resolverSelChange(prefix, idx, val) {
+  const form = document.getElementById('res-newform-' + prefix + '-' + idx);
+  if (form) form.style.display = val === '__new__' ? 'block' : 'none';
+}
+
+function resolverCancel(prefix) {
+  if (prefix === 'inv') { invImportDone(); window._invPendingImport = null; window._invUnmatched = null; }
+  if (prefix === 'mob') { mobImportDone(); window._mobPendingImport = null; window._mobUnmatched = null; }
+}
+
+async function confirmNameResolver(prefix, afterResolve) {
+  const unmatched = (prefix === 'inv' ? window._invUnmatched : window._mobUnmatched) || [];
+  const location  = prefix === 'inv' ? invCurrentLocation : mobileCurrentLocation;
+  const nameMap   = {};
+  const newEmps   = []; // employees to create
+
+  for (let idx = 0; idx < unmatched.length; idx++) {
+    const name = unmatched[idx];
+    const sel  = document.getElementById('res-sel-' + prefix + '-' + idx);
+    if (!sel) continue;
+    const val = sel.value;
+
+    if (val === '__new__') {
+      const fullName = (document.getElementById('res-name-'  + prefix + '-' + idx).value || '').trim();
+      const dept     = (document.getElementById('res-dept-'  + prefix + '-' + idx).value || '').trim();
+      const desig    = (document.getElementById('res-desig-' + prefix + '-' + idx).value || '').trim();
+      if (!fullName) { toast('Please enter a name for "' + name + '"', 'error'); return; }
+      newEmps.push({ name: fullName, department: dept, designation: desig });
+      nameMap[name.toLowerCase().trim()] = fullName;
+    } else if (val !== '__skip__') {
+      nameMap[name.toLowerCase().trim()] = val;
+    }
+  }
+
+  // Create new employees first
+  if (newEmps.length > 0) {
+    const statusEl = document.getElementById(prefix + '-import-status');
+    if (statusEl) statusEl.textContent = 'Creating ' + newEmps.length + ' new employee(s)...';
+    for (const emp of newEmps) {
+      await DB.saveEmployee(location, {
+        id: genId(),
+        name: emp.name,
+        department: emp.department,
+        designation: emp.designation,
+        status: 'employed'
+      });
+    }
+    toast('✅ ' + newEmps.length + ' new employee(s) created');
+  }
+
+  // Apply name mappings
+  const pendingKey = '_' + prefix + 'PendingImport';
+  const toSave = (window[pendingKey] || []).map(function(item) {
+    const key = (item.employee || '').toLowerCase().trim();
+    return nameMap[key] ? Object.assign({}, item, { employee: nameMap[key] }) : item;
+  });
+
+  window[pendingKey] = toSave;
+  if (prefix === 'inv') window._invUnmatched = null;
+  if (prefix === 'mob') window._mobUnmatched = null;
+
+  await afterResolve(toSave);
+}
+
+</script>
+<script>
+// ============================================================
 // WIFI MODULE — Supabase version
 // ============================================================
 
@@ -1704,51 +1860,23 @@ function invCancelResolver() {
 }
 
 async function invConfirmResolver() {
-  const unmatched = window._invUnmatched || [];
-  const nameMap = {};
-
-  // Build name mapping from selects
-  unmatched.forEach((name, idx) => {
-    const sel = document.getElementById('inv-resolve-' + idx);
-    if (sel && sel.value !== '__skip__') {
-      nameMap[name.toLowerCase().trim()] = sel.value;
+  await confirmNameResolver('inv', async (toSave) => {
+    const warnings = window._invWarnings || [];
+    if (warnings.length > 0) {
+      document.getElementById('inv-import-status').textContent = 'Found ' + warnings.length + ' issue(s). Review below then confirm.';
+      const warnHTML = warnings.map(w =>
+        '<div class="import-warn-row import-warn-' + w.type + '">' +
+        '<div class="import-warn-header"><span>' + (w.type==='error'?'❌':w.type==='skip'?'⏭️':'⚠️') + ' Row ' + w.row + ': <strong>' + w.name + '</strong></span></div>' +
+        w.msgs.map(m => '<div class="import-warn-msg">'+m+'</div>').join('') +
+        '</div>').join('');
+      document.getElementById('inv-import-warnings').innerHTML = warnHTML;
+      document.getElementById('inv-import-confirm-area').style.display = 'flex';
+      document.getElementById('inv-import-confirm-text').textContent = toSave.length > 0 ? 'Proceed to import ' + toSave.length + ' valid device(s)?' : 'No valid rows to import.';
+      document.getElementById('inv-import-confirm-btn').style.display = toSave.length > 0 ? 'inline-block' : 'none';
+    } else {
+      await invDoSave(toSave, null);
     }
   });
-
-  // Apply mappings to toSave
-  const toSave = (window._invPendingImport || []).map(item => {
-    const key = (item.employee||'').toLowerCase().trim();
-    if (nameMap[key]) {
-      return Object.assign({}, item, { employee: nameMap[key] });
-    }
-    return item;
-  });
-
-  window._invPendingImport = toSave;
-  window._invNameMap = nameMap;
-  window._invUnmatched = null;
-
-  // Show warnings if any, else save
-  const warnings = window._invWarnings || [];
-  if (warnings.length > 0) {
-    document.getElementById('inv-import-status').textContent = `Found ${warnings.length} issue(s). Review below then confirm.`;
-    const warnHTML = warnings.map(w => `
-      <div class="import-warn-row import-warn-${w.type}">
-        <div class="import-warn-header">
-          <span>${w.type==='error'?'❌':w.type==='skip'?'⏭️':'⚠️'} Row ${w.row}: <strong>${w.name}</strong></span>
-        </div>
-        ${w.msgs.map(m => '<div class="import-warn-msg">'+m+'</div>').join('')}
-      </div>`).join('');
-    document.getElementById('inv-import-warnings').innerHTML = warnHTML;
-    document.getElementById('inv-import-confirm-area').style.display = 'flex';
-    document.getElementById('inv-import-confirm-text').textContent =
-      toSave.length > 0
-        ? 'Proceed to import ' + toSave.length + ' valid device(s)?'
-        : 'No valid rows to import.';
-    document.getElementById('inv-import-confirm-btn').style.display = toSave.length > 0 ? 'inline-block' : 'none';
-  } else {
-    await invDoSave(toSave, null);
-  }
 }
 
 async function invFilter() {
@@ -2620,27 +2748,14 @@ function mobCancelResolver() {
 }
 
 async function mobConfirmResolver() {
-  const unmatched = window._mobUnmatched || [];
-  const nameMap = {};
-  unmatched.forEach(function(name, idx) {
-    const sel = document.getElementById('mob-resolve-' + idx);
-    if (sel && sel.value !== '__skip__') nameMap[name.toLowerCase().trim()] = sel.value;
+  await confirmNameResolver('mob', async function(toSave) {
+    const warnings = window._mobWarnings || [];
+    if (warnings.length > 0) {
+      mobShowWarnings(warnings, toSave);
+    } else {
+      await mobDoSave(toSave, null);
+    }
   });
-
-  const toSave = (window._mobPendingImport || []).map(function(item) {
-    const key = (item.employee||'').toLowerCase().trim();
-    if (nameMap[key]) return Object.assign({}, item, { employee: nameMap[key] });
-    return item;
-  });
-  window._mobPendingImport = toSave;
-  window._mobUnmatched = null;
-
-  const warnings = window._mobWarnings || [];
-  if (warnings.length > 0) {
-    mobShowWarnings(warnings, toSave);
-  } else {
-    await mobDoSave(toSave, null);
-  }
 }
 
 function mobShowWarnings(warnings, toSave) {
