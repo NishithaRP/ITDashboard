@@ -22,10 +22,12 @@
   
   
 <style>
+/* ── DARK THEME (default) ── */
 :root {
   --bg: #0d1117;
   --surface: #161b22;
   --surface2: #1c2330;
+  --surface3: #252d3a;
   --border: #30363d;
   --accent: #00d4aa;
   --accent2: #0096ff;
@@ -36,6 +38,46 @@
   --text3: #484f58;
   --radius: 10px;
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --login-bg: radial-gradient(ellipse at top, #0d1f2d 0%, #0d1117 60%);
+  --header-bg: #161b22;
+  --tab-active-bg: rgba(0,212,170,0.12);
+  --table-row-hover: rgba(255,255,255,0.03);
+  --badge-bg: rgba(0,150,255,0.15);
+  --badge-color: #60b4ff;
+  --stat-bg: #1c2330;
+  --input-bg: #0d1117;
+  --modal-bg: #161b22;
+  --code-color: #00d4aa;
+  --theme-icon: '☀️';
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --surface2: #e8edf2;
+  --surface3: #dde3ea;
+  --border: #c8d0db;
+  --accent: #00a882;
+  --accent2: #0070cc;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --text: #1a202c;
+  --text2: #4a5568;
+  --text3: #a0aec0;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.10);
+  --login-bg: radial-gradient(ellipse at top, #e0f2fe 0%, #f0f4f8 60%);
+  --header-bg: #ffffff;
+  --tab-active-bg: rgba(0,168,130,0.10);
+  --table-row-hover: rgba(0,0,0,0.03);
+  --badge-bg: rgba(0,112,204,0.10);
+  --badge-color: #0070cc;
+  --stat-bg: #ffffff;
+  --input-bg: #ffffff;
+  --modal-bg: #ffffff;
+  --code-color: #00a882;
+  --theme-icon: '🌙';
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -799,6 +841,160 @@ tbody td {
   cursor: pointer;
 }
 th.cb-col, td.cb-col { width: 36px; padding: 0 8px; text-align: center; }
+
+/* ── THEME TOGGLE ── */
+.theme-toggle {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text2);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Light mode overrides for specific components */
+[data-theme="light"] body {
+  background: var(--bg);
+}
+[data-theme="light"] .app-header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .location-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+[data-theme="light"] .loc-tab { color: var(--text2); }
+[data-theme="light"] .loc-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+[data-theme="light"] .module-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+[data-theme="light"] .mod-tab { color: var(--text2); }
+[data-theme="light"] .mod-tab.active {
+  background: var(--tab-active-bg);
+  color: var(--accent);
+}
+[data-theme="light"] .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+[data-theme="light"] table thead tr {
+  background: var(--surface2);
+}
+[data-theme="light"] thead th {
+  color: var(--text2);
+  background: var(--surface2);
+  border-bottom: 2px solid var(--border);
+}
+[data-theme="light"] tbody tr:hover { background: var(--table-row-hover); }
+[data-theme="light"] tbody td { border-bottom: 1px solid var(--border); }
+[data-theme="light"] .modal-box,
+[data-theme="light"] .modal {
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+}
+[data-theme="light"] .modal-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background: var(--input-bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,168,130,0.15);
+}
+[data-theme="light"] .stat-card {
+  background: var(--stat-bg);
+  border: 1px solid var(--border);
+}
+[data-theme="light"] .badge {
+  background: var(--badge-bg);
+  color: var(--badge-color);
+}
+[data-theme="light"] .badge-blue {
+  background: rgba(0,112,204,0.10);
+  color: var(--accent2);
+}
+[data-theme="light"] .section-subtitle { color: var(--text2); }
+[data-theme="light"] .empty-state { color: var(--text2); }
+[data-theme="light"] .form-section-label { color: var(--accent); }
+[data-theme="light"] .login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+}
+[data-theme="light"] #login-screen {
+  background: var(--login-bg);
+}
+[data-theme="light"] .bulk-bar {
+  background: rgba(220,38,38,0.08);
+  border-color: rgba(220,38,38,0.25);
+}
+[data-theme="light"] .import-warn-row {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+[data-theme="light"] .import-warn-error { border-left-color: var(--danger); }
+[data-theme="light"] .import-warn-warning { border-left-color: var(--warning); }
+[data-theme="light"] .btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+}
+[data-theme="light"] .btn-close {
+  color: var(--text2);
+  background: var(--surface2);
+}
+[data-theme="light"] .btn-close:hover { background: var(--danger); color: #fff; }
+[data-theme="light"] .wifi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+[data-theme="light"] .dept-pill {
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+[data-theme="light"] .status-employed {
+  background: rgba(0,168,130,0.12);
+  color: var(--accent);
+}
+[data-theme="light"] .status-resigned {
+  background: rgba(220,38,38,0.10);
+  color: var(--danger);
+}
+[data-theme="light"] .form-section-divider { border-color: var(--border); }
+[data-theme="light"] select option { background: var(--surface); color: var(--text); }
+
+/* Smooth theme transition */
+body, .app-header, .card, .modal, .modal-box, .modal-header,
+.location-tabs, .module-nav, .stat-card, .login-card, input, select, textarea {
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.15s ease;
+}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -3546,6 +3742,7 @@ function renderApp() {
       </div>
       <div class="header-right">
         <span class="user-info" id="user-display"></span>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark mode">☀️ Light</button>
         <button class="btn-logout" onclick="doLogout()">Sign Out</button>
       </div>
     </div>
@@ -3560,6 +3757,10 @@ function renderApp() {
   const ud = document.getElementById('user-display');
   if (ud) ud.textContent = currentUser ? currentUser.name : '';
   renderCurrentModule();
+  // Re-sync theme button after re-render
+  const _t = localStorage.getItem('polydime_theme') || 'dark';
+  const _btn = document.getElementById('theme-btn');
+  if (_btn) { _btn.innerHTML = _t === 'light' ? '🌙 Dark' : '☀️ Light'; }
 }
 
 function renderCurrentModule() {
@@ -3586,7 +3787,37 @@ function switchModule(mod) {
   renderCurrentModule();
 }
 
+
+// ======================================================
+// THEME TOGGLE
+// ======================================================
+function initTheme() {
+  const saved = localStorage.getItem('polydime_theme') || 'dark';
+  applyTheme(saved, false);
+}
+
+function applyTheme(theme, save=true) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  if (save) localStorage.setItem('polydime_theme', theme);
+  // Update button text if it exists
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    btn.innerHTML = theme === 'light' ? '🌙 Dark' : '☀️ Light';
+    btn.title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  }
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem('polydime_theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
+  initTheme();
   document.getElementById('app').innerHTML=`${renderLogin()}<div id="main-app" style="display:none;"></div>`;
   authInit();
 });
