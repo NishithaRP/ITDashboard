@@ -1683,11 +1683,25 @@ async function showResignDialog(empName, location, onDone) {
   ]);
 
   const nameLower  = empName.toLowerCase().trim();
-  const linkedInv  = inventory.filter(i => (i.employee||'').toLowerCase().trim() === nameLower);
-  const linkedMob  = mobiles.filter(m  => (m.employee||'').toLowerCase().trim() === nameLower);
-  const linkedIPs  = ips.filter(i      => (i.employee||'').toLowerCase().trim() === nameLower);
-  const linkedERP  = erps.filter(e     => (e.employee||'').toLowerCase().trim() === nameLower);
-  const linkedRDP  = rdps.filter(r     => (r.label||'').toLowerCase().includes(nameLower));
+  const firstName  = nameLower.split(' ')[0];
+
+  // Fuzzy match: exact OR first-name match (handles trailing spaces, partial names)
+  function nameMatch(stored) {
+    const s = (stored||'').toLowerCase().trim();
+    if (s === nameLower) return true;
+    if (firstName.length > 2 && s.split(' ')[0] === firstName) return true;
+    return false;
+  }
+
+  const linkedInv  = inventory.filter(i => nameMatch(i.employee));
+  const linkedMob  = mobiles.filter(m  => nameMatch(m.employee));
+  const linkedIPs  = ips.filter(i      => nameMatch(i.employee));
+  const linkedERP  = erps.filter(e     => nameMatch(e.employee));
+  const linkedRDP  = rdps.filter(r     => (r.label||'').toLowerCase().includes(firstName));
+
+  // Debug: show what was found
+  console.log('[Resign] Employee:', empName, '| Inv:', linkedInv.length, '| Mob:', linkedMob.length, '| IP:', linkedIPs.length, '| ERP:', linkedERP.length, '| RDP:', linkedRDP.length);
+  if (linkedInv.length) console.log('[Resign] Inv items:', linkedInv.map(i => i.employee + ' / ' + i.brand));
   const hasLinked  = linkedInv.length || linkedMob.length || linkedIPs.length || linkedERP.length || linkedRDP.length;
   const activeEmps = allEmps.filter(e  => e.name.toLowerCase().trim() !== nameLower && (e.status||'employed') === 'employed');
 
@@ -1836,7 +1850,8 @@ async function confirmResign(empName) {
 
   // Now safe to close modal
   closeResignModal();
-  toast('Processing resignation...');
+  toast('🔄 Processing resignation and transfers...');
+  console.log('[Resign] Starting transfer for:', empName, '| selInv:', JSON.stringify(selInv));
 
   // Resolve a collected selection: create new emp if needed, return final name or ''
   async function resolve(sel) {
@@ -1890,7 +1905,9 @@ async function confirmResign(empName) {
   }
 
   const total = linkedInv.length + linkedMob.length + linkedIPs.length + linkedERP.length + linkedRDP.length;
-  toast('🚪 ' + empName + ' resigned.' + (total ? ' ' + total + ' record(s) transferred.' : ''));
+  const transferred = [...selInv,...selMob,...selIP,...selERP,...selRDP].filter(s=>s&&s.val&&s.val!=='__clear__').length;
+  console.log('[Resign] Done. Total records:', total, '| Transferred:', transferred);
+  toast('🚪 ' + empName + ' resigned. ' + total + ' record(s) processed, ' + transferred + ' transferred.');
   window._resignContext = null;
   if (onDone) onDone();
 }
