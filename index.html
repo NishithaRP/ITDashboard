@@ -1269,9 +1269,25 @@ function renderNameResolver(prefix, unmatchedNames, employees, totalValid) {
 
     const opts = suggestions.map(function(x) {
       const star = x.score > 50 ? ' ⭐' : x.score > 25 ? ' 🔵' : '';
-      return '<option value="' + x.e.name.replace(/"/g, '&quot;') + '">'
-        + x.e.name + (x.e.department ? ' · ' + x.e.department : '') + star + '</option>';
+      const isResigned = (x.e.status || 'employed') === 'resigned';
+      const resignTag = isResigned ? ' 🚪 Resigned' : '';
+      return '<option value="' + x.e.name.replace(/"/g, '&quot;') + '" '
+        + (isResigned ? 'style="color:#f87171;"' : '') + '>'
+        + x.e.name + (x.e.department ? ' · ' + x.e.department : '') + star + resignTag + '</option>';
     }).join('');
+
+    // Also add ALL resigned employees as a separate group at bottom
+    const resignedEmps = employees.filter(function(e) {
+      return (e.status || 'employed') === 'resigned'
+        && !suggestions.find(function(s) { return s.e.name === e.name; });
+    });
+    const resignedOpts = resignedEmps.length
+      ? '<option disabled>── Resigned Employees ──</option>'
+        + resignedEmps.map(function(e) {
+            return '<option value="' + e.name.replace(/"/g,'&quot;') + '" style="color:#f87171;">'
+              + e.name + (e.department ? ' · ' + e.department : '') + ' 🚪</option>';
+          }).join('')
+      : '';
 
     html += '<div id="res-card-' + prefix + '-' + idx + '" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;">'
 
@@ -1288,6 +1304,7 @@ function renderNameResolver(prefix, unmatchedNames, employees, totalValid) {
       + '<option value="__skip__">— Keep as &quot;' + name + '&quot; (as-is) —</option>'
       + '<option value="__new__" style="color:var(--accent);font-weight:700;">➕ Create new employee &quot;' + name + '&quot;</option>'
       + opts
+      + resignedOpts
       + '</select></div></div>'
 
       // Inline create-new form (hidden by default)
@@ -1329,6 +1346,11 @@ function resolverSelChange(prefix, idx, val) {
 function resolverCancel(prefix) {
   if (prefix === 'inv') { invImportDone(); window._invPendingImport = null; window._invUnmatched = null; }
   if (prefix === 'mob') { mobImportDone(); window._mobPendingImport = null; window._mobUnmatched = null; }
+}
+
+function resolverConfirm(prefix) {
+  if (prefix === 'inv') invConfirmResolver();
+  if (prefix === 'mob') mobConfirmResolver();
 }
 
 async function confirmNameResolver(prefix, afterResolve) {
